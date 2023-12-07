@@ -1,18 +1,20 @@
-CC := mpicc
-CFLAGS := -O3 -g
+CXX := mpicxx
+CXXFLAGS := -O3 -g
+LDFLAGS := 
 
 TARGET := MPI
-SRCS := main.c  
 
-OBJS := $(SRCS:.c=.o)
+SRCS := MPI.cpp
+
+OBJS := $(SRCS:.cpp=.o)
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
-%.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+%.o: %.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
 
 clean:
 	rm -f $(TARGET) $(OBJS)
