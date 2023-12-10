@@ -150,7 +150,8 @@ void printOcean(Animal ocean[], int oceanSize) {
         printf("\n");
     }
 
-    sleep(1);  // Wait a bit before the next update to see the changes (remove if not needed)
+     printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
 }
 
 int main(int argc, char** argv) {
