@@ -1,9 +1,11 @@
 CXX := mpicxx
-CXXFLAGS := -O3 -g -I/usr/include  
-LDFLAGS := -L/usr/lib -lsfml-graphics -lsfml-window -lsfml-system  
+CXXFLAGS := -O3 -g
+LDFLAGS := 
 
 TARGET := MPI
+
 SRCS := MPI.cpp
+
 OBJS := $(SRCS:.cpp=.o)
 
 all: $(TARGET)
