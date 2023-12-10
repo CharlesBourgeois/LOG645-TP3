@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cmath>
-#include <SFML/Graphics.hpp>
+#include <unistd.h>
 
 #define OCEAN_SIZE 100
 #define MREQUIN 10
@@ -123,48 +123,30 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
         }
     }
 }
-void drawOcean(Animal ocean[], int oceanSize) {
-    // Create the main window
-    sf::RenderWindow window(sf::VideoMode(800, 800), "Ocean Simulation");
-    
-    // Define the size of each cell based on the window size and ocean size
-    float cellWidth = static_cast<float>(window.getSize().x) / oceanSize;
-    float cellHeight = static_cast<float>(window.getSize().y) / oceanSize;
 
-    // Start the window's event loop
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
+void clearScreen() {
+    // CSI[2J clears screen, CSI[H moves the cursor to top-left corner
+    printf("\033[2J\033[H");
+}
 
-        // Clear the screen with a blue color to represent water
-        window.clear(sf::Color::Blue);
+void printOcean(Animal ocean[], int oceanSize) {
+    clearScreen(); // Clear the console before printing the new state
 
-        // Draw the ocean creatures
-        for (int i = 0; i < MAX_ANIMALS; i++) {
-            if (ocean[i].type != EMPTY) {
-                sf::RectangleShape cell(sf::Vector2f(cellWidth, cellHeight));
-                cell.setPosition(ocean[i].x * cellWidth, ocean[i].y * cellHeight);
-
-                // Color the cells based on the type
-                if (ocean[i].type == 0) { // Fish
-                    cell.setFillColor(sf::Color::Green);
-                } else if (ocean[i].type == 1) { // Shark
-                    cell.setFillColor(sf::Color::Red);
+    for (int i = 0; i < oceanSize; ++i) {
+        for (int j = 0; j < oceanSize; ++j) {
+            char displayChar = ' ';  // Assume the cell is empty
+            for (int k = 0; k < MAX_ANIMALS; ++k) {
+                if (ocean[k].type != EMPTY && (int)ocean[k].x == j && (int)ocean[k].y == i) {
+                    displayChar = (ocean[k].type == 0) ? 'P' : 'R';  // 'P' for fish, 'R' for shark
+                    break;
                 }
-
-                window.draw(cell);
             }
+            printf("%c ", displayChar);
         }
-
-        // Update the window
-        window.display();
-
-        // Break the loop to allow for the next simulation step
-        break;
+        printf("\n");
     }
+
+    sleep(1);  // Wait a bit before the next update to see the changes (remove if not needed)
 }
 
 int main(int argc, char** argv) {
@@ -214,7 +196,7 @@ int main(int argc, char** argv) {
 
         int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
         processReceivedAnimals(buffer, numAnimalsReceived);
-        drawOcean(ocean, OCEAN_SIZE);
+        printOcean(ocean, OCEAN_SIZE);
     }
 
     MPI_Finalize();
