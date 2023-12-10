@@ -124,24 +124,25 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
     }
 }
 
-void clearScreen() {
-    // CSI[2J clears screen, CSI[H moves the cursor to top-left corner
-    printf("\033[2J\033[H");
-}
-
 void printOcean(Animal ocean[], int oceanSize) {
-    clearScreen(); // Clear the console before printing the new state
 
     // Print column headers
-    printf("  ");
+    printf("   ");
     for (int j = 0; j < oceanSize; ++j) {
-        printf("%2d", j);
+        printf("%3d", j);
+    }
+    printf("\n");
+
+    // Print top border of the grid
+    printf("   ");
+    for (int j = 0; j < oceanSize; ++j) {
+        printf("---");
     }
     printf("\n");
 
     for (int i = 0; i < oceanSize; ++i) {
         // Print row headers
-        printf("%2d", i);
+        printf("%2d |", i);
 
         for (int j = 0; j < oceanSize; ++j) {
             char displayChar = '.';  // Assume the cell is empty, represented by a dot
@@ -152,7 +153,14 @@ void printOcean(Animal ocean[], int oceanSize) {
                     break;
                 }
             }
-            printf(" %c", displayChar);
+            printf(" %c ", displayChar);
+        }
+        printf("\n");
+
+        // Print line separator
+        printf("   ");
+        for (int j = 0; j < oceanSize; ++j) {
+            printf("---");
         }
         printf("\n");
     }
