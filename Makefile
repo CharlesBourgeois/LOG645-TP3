@@ -1,6 +1,6 @@
 CXX := mpicxx
-CXXFLAGS := -O3 -g
-LDFLAGS := 
+CXXFLAGS := -O3 -g `pkg-config --cflags sfml-graphics sfml-window sfml-system`
+LDFLAGS := `pkg-config --libs sfml-graphics sfml-window sfml-system`
 
 TARGET := MPI
 
