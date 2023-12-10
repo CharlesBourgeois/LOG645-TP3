@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <cmath>
 
 #define OCEAN_SIZE 100
 #define MREQUIN 10
@@ -87,7 +88,6 @@ void handleCollisionsAndReproduction() {
         }
     }
 }
-}
 
 void updatePosition(Animal* a, float timeStep) {
     a->vx += a->ax * timeStep;
@@ -125,10 +125,6 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
 
 int main(int argc, char** argv) {
 
-    int domain_size = OCEAN_SIZE / sqrt(world_size);
-    int start_x = (world_rank % (int)sqrt(world_size)) * domain_size;
-    int start_y = (world_rank / (int)sqrt(world_size)) * domain_size;
-
     MPI_Init(&argc, &argv);
 
     int world_size;
@@ -136,6 +132,11 @@ int main(int argc, char** argv) {
 
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    // Now you can use world_size and world_rank
+    int domain_size = OCEAN_SIZE / sqrt(world_size);
+    int start_x = (world_rank % (int)sqrt(world_size)) * domain_size;
+    int start_y = (world_rank / (int)sqrt(world_size)) * domain_size;
 
     initializeOcean();
 
