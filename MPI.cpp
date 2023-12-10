@@ -83,15 +83,6 @@ void updateForces(Animal* a) {
         }
     }
 
-    // Additional attraction force for sharks towards the closest fish
-    if (a->type == 1 && closest_fish != NULL && closest_fish_dist < VISIBILITY_RANGE) {
-        float direction_x = (closest_fish->x - a->x) / closest_fish_dist;
-        float direction_y = (closest_fish->y - a->y) / closest_fish_dist;
-
-        force_x += ATTRSHARK_CLOSEST * direction_x; // Stronger attraction to the closest fish
-        force_y += ATTRSHARK_CLOSEST * direction_y;
-    }
-
     // Update the acceleration based on the total force
     a->ax = force_x / (a->type == 0 ? MPOISSON : MREQUIN);
     a->ay = force_y / (a->type == 0 ? MPOISSON : MREQUIN);
