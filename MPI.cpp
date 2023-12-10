@@ -132,16 +132,27 @@ void clearScreen() {
 void printOcean(Animal ocean[], int oceanSize) {
     clearScreen(); // Clear the console before printing the new state
 
+    // Print column headers
+    printf("  ");
+    for (int j = 0; j < oceanSize; ++j) {
+        printf("%2d", j);
+    }
+    printf("\n");
+
     for (int i = 0; i < oceanSize; ++i) {
+        // Print row headers
+        printf("%2d", i);
+
         for (int j = 0; j < oceanSize; ++j) {
-            char displayChar = ' ';  // Assume the cell is empty
+            char displayChar = '.';  // Assume the cell is empty, represented by a dot
+
             for (int k = 0; k < MAX_ANIMALS; ++k) {
                 if (ocean[k].type != EMPTY && (int)ocean[k].x == j && (int)ocean[k].y == i) {
                     displayChar = (ocean[k].type == 0) ? 'P' : 'R';  // 'P' for fish, 'R' for shark
                     break;
                 }
             }
-            printf("%c ", displayChar);
+            printf(" %c", displayChar);
         }
         printf("\n");
     }
