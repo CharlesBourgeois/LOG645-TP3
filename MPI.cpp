@@ -4,6 +4,7 @@
 #include <time.h>
 #include <cmath>
 #include <unistd.h>
+#include <cfloat>
 
 #define OCEAN_SIZE 100
 #define MREQUIN 10
