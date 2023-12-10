@@ -96,14 +96,13 @@ void updatePosition(Animal* a, float timeStep) {
     a->y += a->vy * timeStep;
 }
 
-void exchangeAnimals(int world_rank, int count, Animal* buffer) {
+void exchangeAnimals(int world_rank, int count, Animal* buffer, int* num_received) {
     MPI_Status status;
-    int num_received;
 
     if (world_rank == 0) {
         MPI_Send(buffer, count * sizeof(Animal), MPI_BYTE, 1, 0, MPI_COMM_WORLD);
         MPI_Probe(1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        MPI_Get_count(&status, MPI_BYTE, &num_received);
+        MPI_Get_count(&status, MPI_BYTE, num_received);
         MPI_Recv(buffer, num_received, MPI_BYTE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     else {
@@ -121,58 +120,6 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
             }
         }
     }
-}
-
-int main(int argc, char** argv) {
-
-    MPI_Init(&argc, &argv);
-
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    // Now you can use world_size and world_rank
-    int domain_size = OCEAN_SIZE / sqrt(world_size);
-    int start_x = (world_rank % (int)sqrt(world_size)) * domain_size;
-    int start_y = (world_rank / (int)sqrt(world_size)) * domain_size;
-
-    initializeOcean();
-
-    float timeStep = 1.0;
-    int count = 0;
-    Animal buffer[MAX_ANIMALS];
-
-    for (int step = 0; step < 1000; step++) {
-        count = 0;
-        for (int i = 0; i < MAX_ANIMALS; i++) {
-            if (ocean[i].x >= start_x && ocean[i].x < start_x + domain_size &&
-                ocean[i].y >= start_y && ocean[i].y < start_y + domain_size) {
-                updateForces(&ocean[i]);
-                updatePosition(&ocean[i], timeStep);
-
-            }
-            if (ocean[i].x < start_x || ocean[i].x >= start_x + domain_size ||
-                ocean[i].y < start_y || ocean[i].y >= start_y + domain_size) {
-                buffer[count++] = ocean[i];
-                ocean[i].type = EMPTY; /
-            }
-        }
-
-        handleCollisionsAndReproduction();
-
-        MPI_Barrier(MPI_COMM_WORLD);
-        exchangeAnimals(world_rank, count, buffer);
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
-        processReceivedAnimals(buffer, numAnimalsReceived);
-        printOcean(ocean, OCEAN_SIZE);
-    }
-
-    MPI_Finalize();
-    return 0;
 }
 
 void printOcean(Animal ocean[], int oceanSize) {
@@ -198,4 +145,58 @@ void printOcean(Animal ocean[], int oceanSize) {
         }
         printf("\n");
     }
+}
+
+int main(int argc, char** argv) {
+
+    MPI_Init(&argc, &argv);
+
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    // Now you can use world_size and world_rank
+    int domain_size = OCEAN_SIZE / sqrt(world_size);
+    int start_x = (world_rank % (int)sqrt(world_size)) * domain_size;
+    int start_y = (world_rank / (int)sqrt(world_size)) * domain_size;
+
+    int num_received = 0;
+
+    initializeOcean();
+
+    float timeStep = 1.0;
+    int count = 0;
+    Animal buffer[MAX_ANIMALS];
+
+    for (int step = 0; step < 1000; step++) {
+        count = 0;
+        for (int i = 0; i < MAX_ANIMALS; i++) {
+            if (ocean[i].x >= start_x && ocean[i].x < start_x + domain_size &&
+                ocean[i].y >= start_y && ocean[i].y < start_y + domain_size) {
+                updateForces(&ocean[i]);
+                updatePosition(&ocean[i], timeStep);
+
+            }
+            if (ocean[i].x < start_x || ocean[i].x >= start_x + domain_size ||
+                ocean[i].y < start_y || ocean[i].y >= start_y + domain_size) {
+                buffer[count++] = ocean[i];
+                ocean[i].type = EMPTY;
+            }
+        }
+
+        handleCollisionsAndReproduction();
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        exchangeAnimals(world_rank, count, buffer, &num_received);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
+        processReceivedAnimals(buffer, numAnimalsReceived);
+        printOcean(ocean, OCEAN_SIZE);
+    }
+
+    MPI_Finalize();
+    return 0;
 }
