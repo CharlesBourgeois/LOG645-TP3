@@ -11,6 +11,7 @@
 #define PREP 0.1
 #define EMPTY -1
 #define MAX_ANIMALS 1000
+#define HUNGER_LIMIT 10
 
 typedef struct {
     int type; // 0 pour poisson, 1 pour requin
@@ -106,7 +107,7 @@ void handleCollisionsAndReproduction() {
             if (ocean[i].type == 1) {
                 ocean[i].hunger++;
                 // Starvation check
-                if (ocean[i].hunger > SOME_HUNGER_THRESHOLD) {
+                if (ocean[i].hunger > HUNGER_LIMIT) {
                     ocean[i].type = EMPTY; // Shark dies
                 }
             }
