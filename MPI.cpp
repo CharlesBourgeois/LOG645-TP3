@@ -103,7 +103,7 @@ void exchangeAnimals(int world_rank, int count, Animal* buffer, int* num_receive
         MPI_Send(buffer, count * sizeof(Animal), MPI_BYTE, 1, 0, MPI_COMM_WORLD);
         MPI_Probe(1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         MPI_Get_count(&status, MPI_BYTE, num_received);
-        MPI_Recv(buffer, num_received, MPI_BYTE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(buffer, &num_received, MPI_BYTE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     else {
         MPI_Recv(buffer, MAX_ANIMALS * sizeof(Animal), MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
