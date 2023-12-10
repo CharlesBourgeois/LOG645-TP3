@@ -96,7 +96,7 @@ void updatePosition(Animal* a, float timeStep) {
     a->y += a->vy * timeStep;
 }
 
-void exchangeAnimals(int world_rank, int count, Animal* buffer, int* num_received) {
+void exchangeAnimals(int world_rank, int world_size, int count, Animal* buffer, int* num_received) {
     MPI_Status status;
 
     if (world_size > 1) {
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
         handleCollisionsAndReproduction();
 
         MPI_Barrier(MPI_COMM_WORLD);
-        exchangeAnimals(world_rank, count, buffer, &num_received);
+        exchangeAnimals(world_rank, world_size, count, buffer, &num_received);
         MPI_Barrier(MPI_COMM_WORLD);
 
         int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
