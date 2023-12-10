@@ -148,6 +148,26 @@ void printOcean(Animal ocean[], int oceanSize) {
     }
 }
 
+void outputOceanToFile(Animal ocean[], int oceanSize) {
+    FILE *file = fopen("ocean.csv", "w");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+
+    // Write the header
+    fprintf(file, "x,y,type\n");
+
+    // Write the data
+    for (int i = 0; i < MAX_ANIMALS; i++) {
+        if (ocean[i].type != EMPTY) {
+            fprintf(file, "%f,%f,%d\n", ocean[i].x, ocean[i].y, ocean[i].type);
+        }
+    }
+
+    fclose(file);
+}
+
 int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
@@ -196,6 +216,7 @@ int main(int argc, char** argv) {
         int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
         processReceivedAnimals(buffer, numAnimalsReceived);
         printOcean(ocean, OCEAN_SIZE);
+        outputOceanToFile(ocean, OCEAN_SIZE);
     }
 
     MPI_Finalize();
