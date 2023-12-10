@@ -13,12 +13,17 @@
 #define MAX_ANIMALS 1000
 #define HUNGER_LIMIT 10
 
+#define REPFISH 1.0         
+#define ATTRSHARK 1.0       
+#define ATTRSHARK_CLOSEST 2.0 
+#define VISIBILITY_RANGE 20 
+
 typedef struct {
     int type; // 0 pour poisson, 1 pour requin
-    float x, y; // Position
-    float vx, vy; // Vitesse
-    float ax, ay; // Accélération
-    int hunger; // Faim pour les requins
+    float x, y; 
+    float vx, vy; 
+    float ax, ay; 
+    int hunger; 
 } Animal;
 
 Animal ocean[MAX_ANIMALS];
@@ -37,19 +42,36 @@ void initializeOcean() {
 
 void updateForces(Animal* a) {
     float force_x = 0.0, force_y = 0.0;
+    float closestFishDistance = FLT_MAX; 
+    int closestFishIndex = -1;    
 
-    force_x += 0.1; 
+    force_x += 0.1;
 
     for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != a->type) {
+        if (ocean[i].type != EMPTY && i != (a - ocean)) { 
             float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
-            if (a->type == 0 && distance < 10) {
-                force_x -= 1 / distance; 
+            float forceMagnitude = (a->type == 0) ? (REPFISH / distance) : (ATTRSHARK / distance);
+            float dx = (ocean[i].x - a->x) / distance;
+            float dy = (ocean[i].y - a->y) / distance;
+
+            if (a->type != ocean[i].type) {
+                force_x += (a->type == 0) ? -forceMagnitude * dx : forceMagnitude * dx;
+                force_y += (a->type == 0) ? -forceMagnitude * dy : forceMagnitude * dy;
             }
-            if (a->type == 1 && distance < 20) { 
-                force_x += 1 / distance; 
+
+            if (a->type == 1 && ocean[i].type == 0 && distance < closestFishDistance) {
+                closestFishDistance = distance;
+                closestFishIndex = i;
             }
         }
+    }
+
+    if (a->type == 1 && closestFishIndex != -1 && closestFishDistance < VISIBILITY_RANGE) {
+        float distance = closestFishDistance;
+        float dx = (ocean[closestFishIndex].x - a->x) / distance;
+        float dy = (ocean[closestFishIndex].y - a->y) / distance;
+        force_x += ATTRSHARK_CLOSEST * dx;
+        force_y += ATTRSHARK_CLOSEST * dy;
     }
 
     a->ax = force_x / (a->type == 0 ? MPOISSON : MREQUIN);
@@ -60,9 +82,8 @@ void handleCollisionsAndReproduction() {
     for (int i = 0; i < MAX_ANIMALS; i++) {
         for (int j = i + 1; j < MAX_ANIMALS; j++) {
             float distance = sqrt(pow(ocean[i].x - ocean[j].x, 2) + pow(ocean[i].y - ocean[j].y, 2));
-            if (distance < 1.0) { // Check for collision
+            if (distance < 1.0) { 
                 if (ocean[i].type == ocean[j].type) {
-                    // Elastic collision: exchange velocities
                     float temp_vx = ocean[i].vx;
                     float temp_vy = ocean[i].vy;
                     ocean[i].vx = ocean[j].vx;
@@ -73,22 +94,20 @@ void handleCollisionsAndReproduction() {
                 else {
                     // Shark eats fish
                     if (ocean[i].type == 1) {
-                        ocean[j].type = EMPTY; // Remove fish
-                        ocean[i].hunger = 0; // Reset shark hunger
+                        ocean[j].type = EMPTY; 
+                        ocean[i].hunger = 0; 
                     }
                     else {
-                        ocean[i].type = EMPTY; // Remove fish
-                        ocean[j].hunger = 0; // Reset shark hunger
+                        ocean[i].type = EMPTY; 
+                        ocean[j].hunger = 0; 
                     }
                 }
             }
         }
     }
 
-    // Handle reproduction and starvation
     for (int i = 0; i < MAX_ANIMALS; i++) {
         if (ocean[i].type != EMPTY) {
-            // Reproduction
             if (rand() < PREP * RAND_MAX) {
                 for (int k = 0; k < MAX_ANIMALS; k++) {
                     if (ocean[k].type == EMPTY) {
@@ -103,12 +122,10 @@ void handleCollisionsAndReproduction() {
                 }
             }
 
-            // Increment hunger for sharks
             if (ocean[i].type == 1) {
                 ocean[i].hunger++;
-                // Starvation check
                 if (ocean[i].hunger > HUNGER_LIMIT) {
-                    ocean[i].type = EMPTY; // Shark dies
+                    ocean[i].type = EMPTY; 
                 }
             }
         }
@@ -150,7 +167,6 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
 }
 
 void printOcean(Animal ocean[], int oceanSize) {
-    // Print column headers
     printf("  ");
     for (int j = 0; j < oceanSize; ++j) {
         printf("%2d", j);
@@ -158,11 +174,10 @@ void printOcean(Animal ocean[], int oceanSize) {
     printf("\n");
 
     for (int i = 0; i < oceanSize; ++i) {
-        // Print row headers
         printf("%2d", i);
 
         for (int j = 0; j < oceanSize; ++j) {
-            char displayChar = '.';  // Assume the cell is empty, represented by a dot
+            char displayChar = '.'; 
 
             for (int k = 0; k < MAX_ANIMALS; ++k) {
                 if (ocean[k].type != EMPTY && (int)ocean[k].x == j && (int)ocean[k].y == i) {
@@ -189,7 +204,6 @@ int main(int argc, char** argv) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    // Now you can use world_size and world_rank
     int domain_size = OCEAN_SIZE / sqrt(world_size);
     int start_x = (world_rank % (int)sqrt(world_size)) * domain_size;
     int start_y = (world_rank / (int)sqrt(world_size)) * domain_size;
