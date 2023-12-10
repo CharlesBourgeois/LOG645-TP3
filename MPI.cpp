@@ -124,38 +124,30 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
 }
 
 void printOcean(Animal ocean[], int oceanSize) {
-    // Create a 2D array to represent the grid
-    char **displayGrid = (char**)malloc(oceanSize * sizeof(char*));
+    char displayGrid[oceanSize][oceanSize];
+
     for (int i = 0; i < oceanSize; i++) {
-        displayGrid[i] = (char*)malloc(oceanSize * sizeof(char));
         for (int j = 0; j < oceanSize; j++) {
-            displayGrid[i][j] = 'x';  // Initialize with 'x' to represent empty water
+            displayGrid[i][j] = 'x';
         }
     }
 
-    // Place the animals on the grid
     for (int i = 0; i < MAX_ANIMALS; i++) {
         if (ocean[i].type != EMPTY) {
             int x = (int)ocean[i].x % oceanSize;
             int y = (int)ocean[i].y % oceanSize;
-            displayGrid[y][x] = (ocean[i].type == 0) ? 'P' : 'R';  // P for fish, R for shark
+            displayGrid[y][x] = (ocean[i].type == 0) ? 'P' : 'R'; 
         }
     }
 
-    // Print the grid to the console
     for (int i = 0; i < oceanSize; i++) {
         for (int j = 0; j < oceanSize; j++) {
             printf("%c ", displayGrid[i][j]);
         }
-        printf("\n");
+        printf("---------------------------------------------------------------------------------" + "\n");
     }
-
-    // Free the allocated memory
-    for (int i = 0; i < oceanSize; i++) {
-        free(displayGrid[i]);
-    }
-    free(displayGrid);
 }
+
 int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
