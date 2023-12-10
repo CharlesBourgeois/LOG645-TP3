@@ -43,47 +43,38 @@ void initializeOcean() {
 
 void updateForces(Animal* a) {
     float force_x = 0.0, force_y = 0.0;
-    float current_force = 0.1; // The current's force, which we assume is constant and to the right
 
-    // Apply the constant current force
-    force_x += current_force;
-
-    // Initialize variables to find the closest fish to the shark
+    force_x += 0.1;
     float closest_fish_dist = FLT_MAX;
     Animal* closest_fish = NULL;
 
-    // Calculate repulsion or attraction forces
     for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != EMPTY && &ocean[i] != a) { // Check that we're not comparing the animal to itself
+        if (ocean[i].type != EMPTY && &ocean[i] != a) {
             float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
+
             float dx = ocean[i].x - a->x;
             float dy = ocean[i].y - a->y;
-
-            // Normalize the direction vector
             float direction_x = dx / distance;
             float direction_y = dy / distance;
 
-            // Fish repulsion from sharks
             if (a->type == 0 && ocean[i].type == 1 && distance < VISIBILITY_RANGE) {
-                force_x -= REPFISH * direction_x / distance; // Repulsion force decreases with distance
+                force_x -= REPFISH * direction_x / distance;
                 force_y -= REPFISH * direction_y / distance;
             }
 
-            // Shark attraction to fish
             if (a->type == 1 && ocean[i].type == 0) {
-                force_x += ATTRSHARK * direction_x / distance; // Attraction force decreases with distance
+                force_x += ATTRSHARK * direction_x / distance; 
                 force_y += ATTRSHARK * direction_y / distance;
 
-                // Check if this fish is the closest one
                 if (distance < closest_fish_dist) {
                     closest_fish_dist = distance;
                     closest_fish = &ocean[i];
                 }
             }
+
         }
     }
 
-    // Update the acceleration based on the total force
     a->ax = force_x / (a->type == 0 ? MPOISSON : MREQUIN);
     a->ay = force_y / (a->type == 0 ? MPOISSON : MREQUIN);
 }
