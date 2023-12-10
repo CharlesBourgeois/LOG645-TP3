@@ -1,11 +1,9 @@
 CXX := mpicxx
-CXXFLAGS := -O3 -g `pkg-config --cflags sfml-graphics sfml-window sfml-system`
-LDFLAGS := `pkg-config --libs sfml-graphics sfml-window sfml-system`
+CXXFLAGS := -O3 -g -I/usr/include  
+LDFLAGS := -L/usr/lib -lsfml-graphics -lsfml-window -lsfml-system  
 
 TARGET := MPI
-
 SRCS := MPI.cpp
-
 OBJS := $(SRCS:.cpp=.o)
 
 all: $(TARGET)
