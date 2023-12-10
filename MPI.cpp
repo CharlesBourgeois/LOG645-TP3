@@ -45,33 +45,16 @@ void updateForces(Animal* a) {
     float force_x = 0.0, force_y = 0.0;
 
     force_x += 0.1;
-    float closest_fish_dist = FLT_MAX;
-    Animal* closest_fish = NULL;
 
     for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != EMPTY && &ocean[i] != a) {
+        if (ocean[i].type != a->type) {
             float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
-
-            float dx = ocean[i].x - a->x;
-            float dy = ocean[i].y - a->y;
-            float direction_x = dx / distance;
-            float direction_y = dy / distance;
-
-            if (a->type == 0 && ocean[i].type == 1 && distance < VISIBILITY_RANGE) {
-                force_x -= REPFISH * direction_x / distance;
-                force_y -= REPFISH * direction_y / distance;
+            if (a->type == 0 && distance < 10) {
+                force_x -= 1 / distance;
             }
-
-            if (a->type == 1 && ocean[i].type == 0) {
-                force_x += ATTRSHARK * direction_x / distance; 
-                force_y += ATTRSHARK * direction_y / distance;
-
-                if (distance < closest_fish_dist) {
-                    closest_fish_dist = distance;
-                    closest_fish = &ocean[i];
-                }
+            if (a->type == 1 && distance < 20) {
+                force_x += 1 / distance;
             }
-
         }
     }
 
