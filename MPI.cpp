@@ -59,8 +59,9 @@ void handleCollisionsAndReproduction() {
     for (int i = 0; i < MAX_ANIMALS; i++) {
         for (int j = i + 1; j < MAX_ANIMALS; j++) {
             float distance = sqrt(pow(ocean[i].x - ocean[j].x, 2) + pow(ocean[i].y - ocean[j].y, 2));
-            if (distance < 1.0) { 
+            if (distance < 1.0) { // Check for collision
                 if (ocean[i].type == ocean[j].type) {
+                    // Elastic collision: exchange velocities
                     float temp_vx = ocean[i].vx;
                     float temp_vy = ocean[i].vy;
                     ocean[i].vx = ocean[j].vx;
@@ -69,21 +70,44 @@ void handleCollisionsAndReproduction() {
                     ocean[j].vy = temp_vy;
                 }
                 else {
-                    if (ocean[i].type == 1) ocean[j].type = EMPTY; 
-                    else ocean[i].type = EMPTY;
+                    // Shark eats fish
+                    if (ocean[i].type == 1) {
+                        ocean[j].type = EMPTY; // Remove fish
+                        ocean[i].hunger = 0; // Reset shark hunger
+                    }
+                    else {
+                        ocean[i].type = EMPTY; // Remove fish
+                        ocean[j].hunger = 0; // Reset shark hunger
+                    }
                 }
             }
         }
-        if (rand() < PREP * RAND_MAX) { 
-            for (int k = 0; k < MAX_ANIMALS; k++) {
-                if (ocean[k].type == EMPTY) {
-                    ocean[k].type = ocean[i].type;
-                    ocean[k].x = ocean[i].x + ((rand() % 3) - 1);
-                    ocean[k].y = ocean[i].y + ((rand() % 3) - 1);
-                    ocean[k].vx = ocean[k].vy = 0;
-                    ocean[k].ax = ocean[k].ay = 0;
-                    ocean[k].hunger = 0;
-                    break;
+    }
+
+    // Handle reproduction and starvation
+    for (int i = 0; i < MAX_ANIMALS; i++) {
+        if (ocean[i].type != EMPTY) {
+            // Reproduction
+            if (rand() < PREP * RAND_MAX) {
+                for (int k = 0; k < MAX_ANIMALS; k++) {
+                    if (ocean[k].type == EMPTY) {
+                        ocean[k].type = ocean[i].type;
+                        ocean[k].x = ocean[i].x + ((rand() % 3) - 1);
+                        ocean[k].y = ocean[i].y + ((rand() % 3) - 1);
+                        ocean[k].vx = ocean[k].vy = 0;
+                        ocean[k].ax = ocean[k].ay = 0;
+                        ocean[k].hunger = 0;
+                        break;
+                    }
+                }
+            }
+
+            // Increment hunger for sharks
+            if (ocean[i].type == 1) {
+                ocean[i].hunger++;
+                // Starvation check
+                if (ocean[i].hunger > SOME_HUNGER_THRESHOLD) {
+                    ocean[i].type = EMPTY; // Shark dies
                 }
             }
         }
