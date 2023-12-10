@@ -43,38 +43,56 @@ void initializeOcean() {
 
 void updateForces(Animal* a) {
     float force_x = 0.0, force_y = 0.0;
-    float closestFishDistance = FLT_MAX; 
-    int closestFishIndex = -1;    
+    float current_force = 0.1; // The current's force, which we assume is constant and to the right
 
-    force_x += 0.1;
+    // Apply the constant current force
+    force_x += current_force;
 
+    // Initialize variables to find the closest fish to the shark
+    float closest_fish_dist = FLT_MAX;
+    Animal* closest_fish = NULL;
+
+    // Calculate repulsion or attraction forces
     for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != EMPTY && i != (a - ocean)) { 
+        if (ocean[i].type != EMPTY && &ocean[i] != a) { // Check that we're not comparing the animal to itself
             float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
-            float forceMagnitude = (a->type == 0) ? (REPFISH / distance) : (ATTRSHARK / distance);
-            float dx = (ocean[i].x - a->x) / distance;
-            float dy = (ocean[i].y - a->y) / distance;
+            float dx = ocean[i].x - a->x;
+            float dy = ocean[i].y - a->y;
 
-            if (a->type != ocean[i].type) {
-                force_x += (a->type == 0) ? -forceMagnitude * dx : forceMagnitude * dx;
-                force_y += (a->type == 0) ? -forceMagnitude * dy : forceMagnitude * dy;
+            // Normalize the direction vector
+            float direction_x = dx / distance;
+            float direction_y = dy / distance;
+
+            // Fish repulsion from sharks
+            if (a->type == 0 && ocean[i].type == 1 && distance < VISIBILITY_RANGE) {
+                force_x -= REPFISH * direction_x / distance; // Repulsion force decreases with distance
+                force_y -= REPFISH * direction_y / distance;
             }
 
-            if (a->type == 1 && ocean[i].type == 0 && distance < closestFishDistance) {
-                closestFishDistance = distance;
-                closestFishIndex = i;
+            // Shark attraction to fish
+            if (a->type == 1 && ocean[i].type == 0) {
+                force_x += ATTRSHARK * direction_x / distance; // Attraction force decreases with distance
+                force_y += ATTRSHARK * direction_y / distance;
+
+                // Check if this fish is the closest one
+                if (distance < closest_fish_dist) {
+                    closest_fish_dist = distance;
+                    closest_fish = &ocean[i];
+                }
             }
         }
     }
 
-    if (a->type == 1 && closestFishIndex != -1 && closestFishDistance < VISIBILITY_RANGE) {
-        float distance = closestFishDistance;
-        float dx = (ocean[closestFishIndex].x - a->x) / distance;
-        float dy = (ocean[closestFishIndex].y - a->y) / distance;
-        force_x += ATTRSHARK_CLOSEST * dx;
-        force_y += ATTRSHARK_CLOSEST * dy;
+    // Additional attraction force for sharks towards the closest fish
+    if (a->type == 1 && closest_fish != NULL && closest_fish_dist < VISIBILITY_RANGE) {
+        float direction_x = (closest_fish->x - a->x) / closest_fish_dist;
+        float direction_y = (closest_fish->y - a->y) / closest_fish_dist;
+
+        force_x += ATTRSHARK_CLOSEST * direction_x; // Stronger attraction to the closest fish
+        force_y += ATTRSHARK_CLOSEST * direction_y;
     }
 
+    // Update the acceleration based on the total force
     a->ax = force_x / (a->type == 0 ? MPOISSON : MREQUIN);
     a->ay = force_y / (a->type == 0 ? MPOISSON : MREQUIN);
 }
