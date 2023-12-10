@@ -125,24 +125,16 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
 }
 
 void printOcean(Animal ocean[], int oceanSize) {
-
     // Print column headers
-    printf("   ");
+    printf("  ");
     for (int j = 0; j < oceanSize; ++j) {
-        printf("%3d", j);
-    }
-    printf("\n");
-
-    // Print top border of the grid
-    printf("   ");
-    for (int j = 0; j < oceanSize; ++j) {
-        printf("---");
+        printf("%2d", j);
     }
     printf("\n");
 
     for (int i = 0; i < oceanSize; ++i) {
         // Print row headers
-        printf("%2d |", i);
+        printf("%2d", i);
 
         for (int j = 0; j < oceanSize; ++j) {
             char displayChar = '.';  // Assume the cell is empty, represented by a dot
@@ -153,14 +145,7 @@ void printOcean(Animal ocean[], int oceanSize) {
                     break;
                 }
             }
-            printf(" %c ", displayChar);
-        }
-        printf("\n");
-
-        // Print line separator
-        printf("   ");
-        for (int j = 0; j < oceanSize; ++j) {
-            printf("---");
+            printf(" %c", displayChar);
         }
         printf("\n");
     }
@@ -216,6 +201,8 @@ int main(int argc, char** argv) {
         int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
         processReceivedAnimals(buffer, numAnimalsReceived);
         printOcean(ocean, OCEAN_SIZE);
+        printf("\n");
+        printf("\n");
     }
 
     MPI_Finalize();
