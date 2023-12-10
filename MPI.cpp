@@ -124,50 +124,38 @@ void processReceivedAnimals(Animal* buffer, int numAnimals) {
 }
 
 void printOcean(Animal ocean[], int oceanSize) {
-    char displayGrid[oceanSize][oceanSize];
-
+    // Create a 2D array to represent the grid
+    char **displayGrid = (char**)malloc(oceanSize * sizeof(char*));
     for (int i = 0; i < oceanSize; i++) {
+        displayGrid[i] = (char*)malloc(oceanSize * sizeof(char));
         for (int j = 0; j < oceanSize; j++) {
-            displayGrid[i][j] = '.';
+            displayGrid[i][j] = 'x';  // Initialize with 'x' to represent empty water
         }
     }
 
+    // Place the animals on the grid
     for (int i = 0; i < MAX_ANIMALS; i++) {
         if (ocean[i].type != EMPTY) {
             int x = (int)ocean[i].x % oceanSize;
             int y = (int)ocean[i].y % oceanSize;
-            displayGrid[y][x] = (ocean[i].type == 0) ? 'P' : 'R'; 
+            displayGrid[y][x] = (ocean[i].type == 0) ? 'P' : 'R';  // P for fish, R for shark
         }
     }
 
+    // Print the grid to the console
     for (int i = 0; i < oceanSize; i++) {
         for (int j = 0; j < oceanSize; j++) {
             printf("%c ", displayGrid[i][j]);
         }
         printf("\n");
     }
-}
 
-void outputOceanToFile(Animal ocean[], int oceanSize) {
-    FILE *file = fopen("ocean.csv", "w");
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        exit(1);
+    // Free the allocated memory
+    for (int i = 0; i < oceanSize; i++) {
+        free(displayGrid[i]);
     }
-
-    // Write the header
-    fprintf(file, "x,y,type\n");
-
-    // Write the data
-    for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != EMPTY) {
-            fprintf(file, "%f,%f,%d\n", ocean[i].x, ocean[i].y, ocean[i].type);
-        }
-    }
-
-    fclose(file);
+    free(displayGrid);
 }
-
 int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
@@ -216,7 +204,6 @@ int main(int argc, char** argv) {
         int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
         processReceivedAnimals(buffer, numAnimalsReceived);
         printOcean(ocean, OCEAN_SIZE);
-        outputOceanToFile(ocean, OCEAN_SIZE);
     }
 
     MPI_Finalize();
