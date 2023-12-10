@@ -128,7 +128,7 @@ void printOcean(Animal ocean[], int oceanSize) {
 
     for (int i = 0; i < oceanSize; i++) {
         for (int j = 0; j < oceanSize; j++) {
-            displayGrid[i][j] = 'x';
+            displayGrid[i][j] = ' ';  
         }
     }
 
@@ -136,7 +136,7 @@ void printOcean(Animal ocean[], int oceanSize) {
         if (ocean[i].type != EMPTY) {
             int x = (int)ocean[i].x % oceanSize;
             int y = (int)ocean[i].y % oceanSize;
-            displayGrid[y][x] = (ocean[i].type == 0) ? 'P' : 'R'; 
+            displayGrid[y][x] = (ocean[i].type == 0) ? 'P' : 'R';  // 'P' for fish, 'R' for shark
         }
     }
 
@@ -144,7 +144,7 @@ void printOcean(Animal ocean[], int oceanSize) {
         for (int j = 0; j < oceanSize; j++) {
             printf("%c ", displayGrid[i][j]);
         }
-        printf("---------------------------------------------------------------------------------");
+        printf("\n"); 
     }
 }
 
