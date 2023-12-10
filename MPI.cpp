@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cmath>
+#include <SFML/Graphics.hpp>
 
 #define OCEAN_SIZE 100
 #define MREQUIN 10
