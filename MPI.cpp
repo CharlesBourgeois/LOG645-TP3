@@ -44,23 +44,31 @@ void initializeOcean() {
 void updateForces(Animal* a) {
     float force_x = 0.0, force_y = 0.0;
 
-    force_x += 0.1;
+    force_x += 0.1; 
 
     for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != a->type) {
-            float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
-            if (a->type == 0 && distance < 10) {
-                force_x -= 1 / distance;
+        float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
+
+        if (a->type == 1 && ocean[i].type == 0) {
+            if (distance < VISIBILITY_RANGE) {
+                force_x += ATTRSHARK_CLOSEST / pow(distance, 2);
+                force_y += ATTRSHARK_CLOSEST / pow(distance, 2);
+            } else {
+                force_x += ATTRSHARK / distance;
+                force_y += ATTRSHARK / distance;
             }
-            if (a->type == 1 && distance < 20) {
-                force_x += 1 / distance;
-            }
+        }
+
+        if (a->type == 0 && ocean[i].type == 1) {
+            force_x -= REPPOISSON / distance;
+            force_y -= REPPOISSON / distance;
         }
     }
 
     a->ax = force_x / (a->type == 0 ? MPOISSON : MREQUIN);
     a->ay = force_y / (a->type == 0 ? MPOISSON : MREQUIN);
 }
+
 
 void handleCollisionsAndReproduction() {
     for (int i = 0; i < MAX_ANIMALS; i++) {
