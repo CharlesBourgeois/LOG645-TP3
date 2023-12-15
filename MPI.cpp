@@ -297,9 +297,7 @@ int main(int argc, char** argv) {
         
         MPI_Barrier(MPI_COMM_WORLD);
 
-        if (world_rank == 0) {
-            printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
-        }
+        printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
         MPI_Barrier(MPI_COMM_WORLD);
     }
