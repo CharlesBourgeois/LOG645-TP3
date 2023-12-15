@@ -166,49 +166,76 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
     Animal* all_ocean = NULL;
+
     if (world_rank == 0) {
+        // Debug: Check memory allocation
+        printf("Process %d: Allocating memory for all_ocean.\n", world_rank);
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
+        if (all_ocean == NULL) {
+            fprintf(stderr, "Process %d: Failed to allocate memory for all_ocean.\n", world_rank);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
     }
 
-    MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
-               all_ocean, local_count * sizeof(Animal), MPI_BYTE,
-               0, MPI_COMM_WORLD);
+    // Debug: Before MPI_Gather
+    printf("Process %d: Gathering local ocean data.\n", world_rank);
+    fflush(stdout);
+
+    int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                                   all_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                                   0, MPI_COMM_WORLD);
+
+    // Debug: After MPI_Gather
+    if (gather_result != MPI_SUCCESS) {
+        fprintf(stderr, "Process %d: MPI_Gather failed with error code %d.\n", world_rank, gather_result);
+        if (world_rank == 0) {
+            free(all_ocean);
+        }
+        MPI_Abort(MPI_COMM_WORLD, gather_result);
+    }
 
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
         memset(display, '.', sizeof(display)); 
 
+        // Debug: Check if gathered data is correct
+        printf("Process %d: Processing gathered data for display.\n", world_rank);
+        fflush(stdout);
+
         for (int i = 0; i < MAX_ANIMALS; i++) {
             if (all_ocean[i].type != EMPTY) {
                 int x = (int)all_ocean[i].x;
                 int y = (int)all_ocean[i].y;
-                display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
+                if (x >= 0 && x < oceanSize && y >= 0 && y < oceanSize) {
+                    display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
+                } else {
+                    fprintf(stderr, "Process %d: Invalid animal coordinates x=%d, y=%d\n", world_rank, x, y);
+                }
             }
         }
 
-        printf("  ");
-        for (int j = 0; j < oceanSize; ++j) {
-            printf("%2d", j);
-        }
-        printf("\n");
+        // Debug: Check display array
+        printf("Process %d: Printing display array.\n", world_rank);
+        fflush(stdout);
 
-        for (int i = 0; i < oceanSize; ++i) {
-            printf("%2d", i);
-            for (int j = 0; j < oceanSize; ++j) {
+        for (int i = 0; i < oceanSize; i++) {
+            for (int j = 0; j < oceanSize; j++) {
                 printf(" %c", display[i][j]);
             }
             printf("\n");
         }
-    } 
-    
-    if (world_rank == 0) {
+
+        // Debug: After printing
+        printf("Process %d: Display printed successfully.\n", world_rank);
+        fflush(stdout);
+
         free(all_ocean);
     }
 
-     printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
+    // Debug: End of printOcean
+    printf("Process %d: Finished printOcean function.\n", world_rank);
+    fflush(stdout);
 }
-
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
     MPI_Status status;
@@ -287,16 +314,10 @@ int main(int argc, char** argv) {
 
         Animal buffer[MAX_ANIMALS]; 
         int count = prepareExchange(local_ocean, buffer, &local_count, start_x, start_y, subdomain_size);
-
-                printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
         
         int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
-               printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
-        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size);
-                printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
+        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size); 
+        
         MPI_Barrier(MPI_COMM_WORLD);
 
         if (world_rank == 0) {
