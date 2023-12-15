@@ -20,6 +20,13 @@
 #define VISIBILITY_RANGE 20 
 
 typedef struct {
+    float x_center;
+    float y_center;
+    float total_force_x;
+    float total_force_y;
+} SubdomainForce;
+
+typedef struct {
     int type; // 0 pour poisson, 1 pour requin
     float x, y; 
     float vx, vy; 
@@ -29,27 +36,34 @@ typedef struct {
 
 Animal ocean[MAX_ANIMALS];
 
-void initializeOcean() {
-    srand(time(NULL));
-    for (int i = 0; i < MAX_ANIMALS; i++) {
-        ocean[i].type = rand() % 2;
-        ocean[i].x = rand() % OCEAN_SIZE;
-        ocean[i].y = rand() % OCEAN_SIZE;
-        ocean[i].vx = ocean[i].vy = 0;
-        ocean[i].ax = ocean[i].ay = 0;
-        ocean[i].hunger = 0;
+void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, int start_y, int subdomain_size) {
+    srand(time(NULL) + world_rank); 
+    *local_count = 0;
+    for (int i = 0; i < MAX_ANIMALS / world_size; i++) {
+        local_ocean[i].type = rand() % 2;
+        local_ocean[i].x = start_x + (rand() % subdomain_size);
+        local_ocean[i].y = start_y + (rand() % subdomain_size);
+        local_ocean[i].vx = local_ocean[i].vy = 0;
+        local_ocean[i].ax = local_ocean[i].ay = 0;
+        local_ocean[i].hunger = 0;
+        (*local_count)++;
     }
 }
 
-void updateForces(Animal* a) {
-    float force_x = 0.0, force_y = 0.0;
+void updateLocalForces(Animal* local_ocean, int local_count) {
+    for (int i = 0; i < local_count; i++) {
+        updateForces(&local_ocean[i], local_ocean, local_count);
+    }
+}
 
+void updateForces(Animal* a, Animal* local_ocean, int local_count) {
+    float force_x = 0.0, force_y = 0.0;
     force_x += 0.1; 
 
-    for (int i = 0; i < MAX_ANIMALS; i++) {
-        float distance = sqrt(pow(ocean[i].x - a->x, 2) + pow(ocean[i].y - a->y, 2));
+    for (int i = 0; i < local_count; i++) {
+        float distance = sqrt(pow(local_ocean[i].x - a->x, 2) + pow(local_ocean[i].y - a->y, 2));
 
-        if (a->type == 1 && ocean[i].type == 0) {
+        if (a->type == 1 && local_ocean[i].type == 0) {
             if (distance < VISIBILITY_RANGE) {
                 force_x += ATTRSHARK_CLOSEST / pow(distance, 2);
                 force_y += ATTRSHARK_CLOSEST / pow(distance, 2);
@@ -59,7 +73,7 @@ void updateForces(Animal* a) {
             }
         }
 
-        if (a->type == 0 && ocean[i].type == 1) {
+        if (a->type == 0 && local_ocean[i].type == 1) {
             force_x -= REPPOISSON / distance;
             force_y -= REPPOISSON / distance;
         }
@@ -69,55 +83,55 @@ void updateForces(Animal* a) {
     a->ay = force_y / (a->type == 0 ? MPOISSON : MREQUIN);
 }
 
-
-void handleCollisionsAndReproduction() {
-    for (int i = 0; i < MAX_ANIMALS; i++) {
-        for (int j = i + 1; j < MAX_ANIMALS; j++) {
-            float distance = sqrt(pow(ocean[i].x - ocean[j].x, 2) + pow(ocean[i].y - ocean[j].y, 2));
+void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count) {
+    for (int i = 0; i < *local_count; i++) {
+        for (int j = i + 1; j < *local_count; j++) {
+            float distance = sqrt(pow(local_ocean[i].x - local_ocean[j].x, 2) + 
+                                  pow(local_ocean[i].y - local_ocean[j].y, 2));            
             if (distance < 1.0) { 
-                if (ocean[i].type == ocean[j].type) {
-                    float temp_vx = ocean[i].vx;
-                    float temp_vy = ocean[i].vy;
-                    ocean[i].vx = ocean[j].vx;
-                    ocean[i].vy = ocean[j].vy;
-                    ocean[j].vx = temp_vx;
-                    ocean[j].vy = temp_vy;
+                if (local_ocean[i].type == local_ocean[j].type) {
+                    float temp_vx = local_ocean[i].vx;
+                    float temp_vy = local_ocean[i].vy;
+                    local_ocean[i].vx = local_ocean[j].vx;
+                    local_ocean[i].vy = local_ocean[j].vy;
+                    local_ocean[j].vx = temp_vx;
+                    local_ocean[j].vy = temp_vy;
                 }
                 else {
                     // Shark eats fish
-                    if (ocean[i].type == 1) {
-                        ocean[j].type = EMPTY; 
-                        ocean[i].hunger = 0; 
+                    if (local_ocean[i].type == 1) {
+                        local_ocean[j].type = EMPTY; 
+                        local_ocean[i].hunger = 0; 
                     }
                     else {
-                        ocean[i].type = EMPTY; 
-                        ocean[j].hunger = 0; 
+                        local_ocean[i].type = EMPTY; 
+                        local_ocean[j].hunger = 0; 
                     }
                 }
             }
         }
     }
 
-    for (int i = 0; i < MAX_ANIMALS; i++) {
-        if (ocean[i].type != EMPTY) {
-            if (rand() < PREP * RAND_MAX) {
-                for (int k = 0; k < MAX_ANIMALS; k++) {
-                    if (ocean[k].type == EMPTY) {
-                        ocean[k].type = ocean[i].type;
-                        ocean[k].x = ocean[i].x + ((rand() % 3) - 1);
-                        ocean[k].y = ocean[i].y + ((rand() % 3) - 1);
-                        ocean[k].vx = ocean[k].vy = 0;
-                        ocean[k].ax = ocean[k].ay = 0;
-                        ocean[k].hunger = 0;
+    for (int i = 0; i < *local_count; i++) {
+        if (local_ocean[i].type != EMPTY) {
+            if ((double)rand() / RAND_MAX < PREP) {
+                for (int k = 0; k < *local_count; k++) {
+                    if (local_ocean[k].type == EMPTY) {
+                        local_ocean[k].type = local_ocean[i].type;
+                        local_ocean[k].x = local_ocean[i].x + ((rand() % 3) - 1);
+                        local_ocean[k].y = local_ocean[i].y + ((rand() % 3) - 1);
+                        local_ocean[k].vx = local_ocean[k].vy = 0;
+                        local_ocean[k].ax = local_ocean[k].ay = 0;
+                        local_ocean[k].hunger = 0;
                         break;
                     }
                 }
             }
 
-            if (ocean[i].type == 1) {
-                ocean[i].hunger++;
-                if (ocean[i].hunger > HUNGER_LIMIT) {
-                    ocean[i].type = EMPTY; 
+            if (local_ocean[i].type == 1) {
+                local_ocean[i].hunger++;
+                if (local_ocean[i].hunger > HUNGER_LIMIT) {
+                    local_ocean[i].type = EMPTY; 
                 }
             }
         }
@@ -132,12 +146,14 @@ void updatePosition(Animal* a, float timeStep) {
 }
 
 void processReceivedAnimals(Animal* buffer, int numAnimals) {
+    int max_animals_per_process = MAX_ANIMALS / world_size;
     for (int i = 0; i < numAnimals; i++) {
-        for (int j = 0; j < MAX_ANIMALS; j++) {
-            if (ocean[j].type == EMPTY) {
-                ocean[j] = buffer[i];
-                break;
-            }
+        if (*local_count < max_animals_per_process) {
+            local_ocean[*local_count] = buffer[i];
+            (*local_count)++;
+        } else {
+            int replace_index = rand() % max_animals_per_process;
+            local_ocean[replace_index] = buffer[i];
         }
     }
 }
@@ -170,51 +186,70 @@ void printOcean(Animal ocean[], int oceanSize) {
      getchar(); 
 }
 
+int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
+    MPI_Status status;
+    int numAnimalsReceived = 0;
+
+    int next_rank = (world_rank + 1) % world_size;
+    int prev_rank = (world_rank == 0) ? world_size - 1 : world_rank - 1;
+
+    MPI_Sendrecv(&count, 1, MPI_INT, next_rank, 0, &numAnimalsReceived, 1, MPI_INT, prev_rank, 0, MPI_COMM_WORLD, &status);
+
+    Animal* recv_buffer = new Animal[numAnimalsReceived];
+
+    MPI_Sendrecv(buffer, count * sizeof(Animal), MPI_BYTE, next_rank, 0, 
+                 recv_buffer, numAnimalsReceived * sizeof(Animal), MPI_BYTE, prev_rank, 0, 
+                 MPI_COMM_WORLD, &status);
+
+    for (int i = 0; i < numAnimalsReceived; i++) {
+        if (*local_count < MAX_ANIMALS / world_size) {
+            local_ocean[*local_count] = recv_buffer[i];
+            (*local_count)++;
+        }
+    }
+
+    delete[] recv_buffer;
+    return numAnimalsReceived;
+}
+
 int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
 
-    int world_size;
+    int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-    int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    int domain_size = OCEAN_SIZE / sqrt(world_size);
-    int start_x = (world_rank % (int)sqrt(world_size)) * domain_size;
-    int start_y = (world_rank / (int)sqrt(world_size)) * domain_size;
+    int subdomain_size = OCEAN_SIZE / sqrt(world_size);
+    int start_x = (world_rank % (int)sqrt(world_size)) * subdomain_size;
+    int start_y = (world_rank / (int)sqrt(world_size)) * subdomain_size;
 
-    int num_received = 0;
+    Animal local_ocean[MAX_ANIMALS / world_size]; 
+    int local_count = 0;
 
-    initializeOcean();
+    initializeLocalOcean(local_ocean, &local_count, start_x, start_y, subdomain_size, world_rank, world_size);
 
     float timeStep = 1.0;
-    int count = 0;
-    Animal buffer[MAX_ANIMALS];
 
     for (int step = 0; step < 1000; step++) {
-        count = 0;
-        for (int i = 0; i < MAX_ANIMALS; i++) {
-            if (ocean[i].x >= start_x && ocean[i].x < start_x + domain_size &&
-                ocean[i].y >= start_y && ocean[i].y < start_y + domain_size) {
-                updateForces(&ocean[i]);
-                updatePosition(&ocean[i], timeStep);
-
-            }
-            if (ocean[i].x < start_x || ocean[i].x >= start_x + domain_size ||
-                ocean[i].y < start_y || ocean[i].y >= start_y + domain_size) {
-                buffer[count++] = ocean[i];
-                ocean[i].type = EMPTY;
-            }
+        updateLocalForces(local_ocean, local_count);
+        for (int i = 0; i < local_count; i++) {
+            updatePosition(&local_ocean[i], timeStep);
         }
 
-        handleCollisionsAndReproduction();
+        handleLocalCollisionsAndReproduction(local_ocean, &local_count);
+        
+        Animal buffer[MAX_ANIMALS]; 
+        int count = prepareExchange(local_ocean, buffer, &local_count, start_x, start_y, subdomain_size);
 
-        int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
-        processReceivedAnimals(buffer, numAnimalsReceived);
-        printOcean(ocean, OCEAN_SIZE);
-        printf("\n");
-        printf("\n");
+        int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
+        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count);
+        
+        if (world_rank == 0) {
+            printOcean(ocean, OCEAN_SIZE);
+        }
+        
+        MPI_Barrier(MPI_COMM_WORLD);
     }
 
     MPI_Finalize();
