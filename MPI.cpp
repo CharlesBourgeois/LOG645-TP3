@@ -272,10 +272,6 @@ int main(int argc, char** argv) {
 
     initializeLocalOcean(local_ocean, &local_count, start_x, start_y, subdomain_size, world_rank, world_size);
             
-    printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
-
-     printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
     float timeStep = 1.0;
 
     for (int step = 0; step < 1000; step++) {
