@@ -14,7 +14,7 @@
 #define MAX_ANIMALS 1000
 #define HUNGER_LIMIT 10
 
-#define REPFISH 1.0         
+#define REPPOISSON 1.0         
 #define ATTRSHARK 1.0       
 #define ATTRSHARK_CLOSEST 2.0 
 #define VISIBILITY_RANGE 20 
