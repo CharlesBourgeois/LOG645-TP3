@@ -305,7 +305,6 @@ int main(int argc, char** argv) {
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
-            local_animals++;
         } 
 
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
@@ -321,6 +320,13 @@ int main(int argc, char** argv) {
         printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
         MPI_Barrier(MPI_COMM_WORLD);
+
+        for (int i = 0; i < local_count; i++) {
+            if (local_ocean[i].type != EMPTY) {
+                local_animals++;
+            }
+        }
+
         MPI_Allreduce(&local_animals, &total_animals, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         printf("Total = %.2d \n", total_animals);
 
