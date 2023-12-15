@@ -201,9 +201,15 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         }
     }
 
+     printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
+    
     if (world_rank == 0) {
         free(all_ocean);
     }
+
+     printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
 }
 
 
