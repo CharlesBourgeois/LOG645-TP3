@@ -212,6 +212,28 @@ int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, A
     return numAnimalsReceived;
 }
 
+int prepareExchange(Animal* local_ocean, Animal* buffer, int* local_count, int start_x, int start_y, int subdomain_size) {
+    int count = 0;
+    
+    for (int i = 0; i < *local_count; i++) {
+        int end_x = start_x + subdomain_size;
+        int end_y = start_y + subdomain_size;
+        
+        if (local_ocean[i].x < start_x || local_ocean[i].x >= end_x ||
+            local_ocean[i].y < start_y || local_ocean[i].y >= end_y) {
+            buffer[count] = local_ocean[i];
+            count++;
+            
+            local_ocean[i].type = EMPTY;
+        }
+    }
+
+    *local_count -= count;
+    
+    return count;
+}
+
+
 int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
