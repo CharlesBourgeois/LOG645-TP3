@@ -215,6 +215,13 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         }
 
         free(all_ocean);
+
+        printf("Fish Coordinates:\n");
+        for (int i = 0; i < MAX_ANIMALS; i++) {
+            if (all_ocean[i].type == 0) { // 0 for fish
+                printf("Fish at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
+            }
+        }
     }
 
     printf("\nPress Enter to continue to the next round...\n");
