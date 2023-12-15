@@ -298,8 +298,7 @@ int main(int argc, char** argv) {
     printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
     float timeStep = 1.0;
-    int total_animals = 0;
-    int local_animals = 0;
+    int shark_count = 0, fish_count = 0;
 
     for (int step = 0; step < 1000; step++) {
         updateLocalForces(local_ocean, local_count);
@@ -321,18 +320,21 @@ int main(int argc, char** argv) {
         
         MPI_Barrier(MPI_COMM_WORLD);
 
+        shark_count = 0;
+        fish_count = 0;
+
         for (int i = 0; i < local_count; i++) {
-            if (local_ocean[i].type != EMPTY) {
-                local_animals++;
-            }
+            if (local_ocean[i].type == 1) shark_count++;
+            if (local_ocean[i].type == 0) fish_count++;
         }
+        
+        int total_sharks, total_fish;
+        MPI_Allreduce(&shark_count, &total_sharks, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&fish_count, &total_fish, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-        MPI_Allreduce(&local_animals, &total_animals, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-        printf("Total = %.2d \n", total_animals);
-
-         if (total_animals == 0) {
+        if (total_sharks == 0 || total_fish == 0) {
             if (world_rank == 0) {
-                printf("End of simulation: No more animals left.\n");
+                printf("End of simulation: No more sharks or fish left.\n");
             }
             break;
         }
