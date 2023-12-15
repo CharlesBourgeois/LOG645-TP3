@@ -199,10 +199,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             }
             printf("\n");
         }
-    }
-
-     printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
+    } 
     
     if (world_rank == 0) {
         free(all_ocean);
@@ -285,6 +282,8 @@ int main(int argc, char** argv) {
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep);
         }
+         printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
 
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
         
