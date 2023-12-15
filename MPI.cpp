@@ -36,7 +36,7 @@ typedef struct {
 
 Animal ocean[MAX_ANIMALS];
 
-void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, int start_y, int subdomain_size) {
+void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, int start_y, int subdomain_size, int world_rank, int world_size) {
     srand(time(NULL) + world_rank); 
     *local_count = 0;
     for (int i = 0; i < MAX_ANIMALS / world_size; i++) {
@@ -47,12 +47,6 @@ void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, in
         local_ocean[i].ax = local_ocean[i].ay = 0;
         local_ocean[i].hunger = 0;
         (*local_count)++;
-    }
-}
-
-void updateLocalForces(Animal* local_ocean, int local_count) {
-    for (int i = 0; i < local_count; i++) {
-        updateForces(&local_ocean[i], local_ocean, local_count);
     }
 }
 
@@ -81,6 +75,12 @@ void updateForces(Animal* a, Animal* local_ocean, int local_count) {
 
     a->ax = force_x / (a->type == 0 ? MPOISSON : MREQUIN);
     a->ay = force_y / (a->type == 0 ? MPOISSON : MREQUIN);
+}
+
+void updateLocalForces(Animal* local_ocean, int local_count) {
+    for (int i = 0; i < local_count; i++) {
+        updateForces(&local_ocean[i], local_ocean, local_count);
+    }
 }
 
 void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count) {
@@ -145,7 +145,7 @@ void updatePosition(Animal* a, float timeStep) {
     a->y += a->vy * timeStep;
 }
 
-void processReceivedAnimals(Animal* buffer, int numAnimals) {
+void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals, int* local_count, int world_size) {
     int max_animals_per_process = MAX_ANIMALS / world_size;
     for (int i = 0; i < numAnimals; i++) {
         if (*local_count < max_animals_per_process) {
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
         int count = prepareExchange(local_ocean, buffer, &local_count, start_x, start_y, subdomain_size);
 
         int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
-        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count);
+        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size);
         
         if (world_rank == 0) {
             printOcean(ocean, OCEAN_SIZE);
