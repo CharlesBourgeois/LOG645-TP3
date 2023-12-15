@@ -281,7 +281,7 @@ int main(int argc, char** argv) {
             
     float timeStep = 1.0;
 
-    for (int step = 0; step < 100; step++) {
+    for (int step = 0; step < 1; step++) {
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep);
