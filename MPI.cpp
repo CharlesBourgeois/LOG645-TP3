@@ -131,22 +131,6 @@ void updatePosition(Animal* a, float timeStep) {
     a->y += a->vy * timeStep;
 }
 
-void exchangeAnimals(int world_rank, int world_size, int count, Animal* buffer, int* num_received) {
-    MPI_Status status;
-
-    if (world_size > 1) {
-        if (world_rank == 0) {
-            MPI_Send(buffer, count * sizeof(Animal), MPI_BYTE, 1, 0, MPI_COMM_WORLD);
-            MPI_Probe(1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            MPI_Get_count(&status, MPI_BYTE, num_received);
-            MPI_Recv(buffer, *num_received, MPI_BYTE, 1, 0, MPI_COMM_WORLD, &status);
-        } else if (world_rank == 1) {
-            MPI_Recv(buffer, MAX_ANIMALS * sizeof(Animal), MPI_BYTE, 0, 0, MPI_COMM_WORLD, &status);
-            MPI_Send(buffer, count * sizeof(Animal), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-        }
-    }
-}
-
 void processReceivedAnimals(Animal* buffer, int numAnimals) {
     for (int i = 0; i < numAnimals; i++) {
         for (int j = 0; j < MAX_ANIMALS; j++) {
@@ -225,10 +209,6 @@ int main(int argc, char** argv) {
         }
 
         handleCollisionsAndReproduction();
-
-        MPI_Barrier(MPI_COMM_WORLD);
-        exchangeAnimals(world_rank, world_size, count, buffer, &num_received);
-        MPI_Barrier(MPI_COMM_WORLD);
 
         int numAnimalsReceived = (world_rank == 0) ? num_received / sizeof(Animal) : count;
         processReceivedAnimals(buffer, numAnimalsReceived);
