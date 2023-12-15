@@ -298,12 +298,14 @@ int main(int argc, char** argv) {
     printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
     float timeStep = 1.0;
-    int total_animals;
+    int total_animals = 0;
+    int local_animals = 0;
 
     for (int step = 0; step < 1000; step++) {
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
+            local_animals++;
         } 
 
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
@@ -319,13 +321,13 @@ int main(int argc, char** argv) {
         printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
         MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Allreduce(&local_count, &total_animals, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_animals, &total_animals, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
          if (total_animals == 0) {
             if (world_rank == 0) {
                 printf("End of simulation: No more animals left.\n");
             }
-            break; // Exit the loop and end the simulation
+            break;
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
