@@ -281,12 +281,13 @@ int main(int argc, char** argv) {
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep);
-        }
-         printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
+        } 
 
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
-        
+
+        printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
+
         Animal buffer[MAX_ANIMALS]; 
         int count = prepareExchange(local_ocean, buffer, &local_count, start_x, start_y, subdomain_size);
 
