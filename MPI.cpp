@@ -152,8 +152,15 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
 void updatePosition(Animal* a, float timeStep) {
     a->vx += a->ax * timeStep;
     a->vy += a->ay * timeStep;
+
     a->x += a->vx * timeStep;
     a->y += a->vy * timeStep;
+
+    if (a->x < 0) a->x += OCEAN_SIZE;
+    else if (a->x >= OCEAN_SIZE) a->x -= OCEAN_SIZE;
+
+    if (a->y < 0) a->y += OCEAN_SIZE;
+    else if (a->y >= OCEAN_SIZE) a->y -= OCEAN_SIZE;
 }
 
 void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals, int* local_count, int world_size) {
