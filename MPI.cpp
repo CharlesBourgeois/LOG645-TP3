@@ -164,33 +164,48 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
     }
 }
 
-void printOcean(Animal ocean[], int oceanSize) {
-    printf("  ");
-    for (int j = 0; j < oceanSize; ++j) {
-        printf("%2d", j);
+void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
+    Animal* all_ocean = NULL;
+    if (world_rank == 0) {
+        all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
     }
-    printf("\n");
 
-    for (int i = 0; i < oceanSize; ++i) {
-        printf("%2d", i);
+    MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
+               all_ocean, local_count * sizeof(Animal), MPI_BYTE,
+               0, MPI_COMM_WORLD);
 
-        for (int j = 0; j < oceanSize; ++j) {
-            char displayChar = '.'; 
+    if (world_rank == 0) {
+        char display[oceanSize][oceanSize];
+        memset(display, '.', sizeof(display)); 
 
-            for (int k = 0; k < MAX_ANIMALS; ++k) {
-                if (ocean[k].type != EMPTY && (int)ocean[k].x == j && (int)ocean[k].y == i) {
-                    displayChar = (ocean[k].type == 0) ? 'P' : 'R';  // 'P' for fish, 'R' for shark
-                    break;
-                }
+        for (int i = 0; i < MAX_ANIMALS; i++) {
+            if (all_ocean[i].type != EMPTY) {
+                int x = (int)all_ocean[i].x;
+                int y = (int)all_ocean[i].y;
+                display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
             }
-            printf(" %c", displayChar);
+        }
+
+        printf("  ");
+        for (int j = 0; j < oceanSize; ++j) {
+            printf("%2d", j);
         }
         printf("\n");
+
+        for (int i = 0; i < oceanSize; ++i) {
+            printf("%2d", i);
+            for (int j = 0; j < oceanSize; ++j) {
+                printf(" %c", display[i][j]);
+            }
+            printf("\n");
+        }
     }
 
-     printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
+    if (world_rank == 0) {
+        free(all_ocean);
+    }
 }
+
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
     MPI_Status status;
