@@ -285,15 +285,18 @@ int main(int argc, char** argv) {
 
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
 
-        printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
-
         Animal buffer[MAX_ANIMALS]; 
         int count = prepareExchange(local_ocean, buffer, &local_count, start_x, start_y, subdomain_size);
 
-        int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
-        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size);
+                printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
         
+        int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
+               printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
+        processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size);
+                printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
         MPI_Barrier(MPI_COMM_WORLD);
 
         if (world_rank == 0) {
