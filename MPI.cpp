@@ -20,13 +20,7 @@
 #define VISIBILITY_RANGE 20 
 #define CURRENT_FORCE_X 0.1f // Intensité du courant en X
 #define CURRENT_FORCE_Y 0.0f // Intensité du courant en Y
-
-typedef struct {
-    float x_center;
-    float y_center;
-    float total_force_x;
-    float total_force_y;
-} SubdomainForce;
+#define EPSILON 1e-6
 
 typedef struct {
     int type; // 0 pour poisson, 1 pour requin
