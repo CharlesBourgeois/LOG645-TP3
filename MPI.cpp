@@ -256,7 +256,11 @@ int main(int argc, char** argv) {
     int local_count = 0;
 
     initializeLocalOcean(local_ocean, &local_count, start_x, start_y, subdomain_size, world_rank, world_size);
+            
+    printOcean(ocean, OCEAN_SIZE);
 
+     printf("\nPress Enter to continue to the next round...\n");
+     getchar(); 
     float timeStep = 1.0;
 
     for (int step = 0; step < 1000; step++) {
