@@ -179,7 +179,6 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
 
     // Debug: Before MPI_Gather
     printf("Process %d: Gathering local ocean data.\n", world_rank);
-    fflush(stdout);
 
     int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    all_ocean, local_count * sizeof(Animal), MPI_BYTE,
@@ -200,7 +199,6 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
 
         // Debug: Check if gathered data is correct
         printf("Process %d: Processing gathered data for display.\n", world_rank);
-        fflush(stdout);
 
         for (int i = 0; i < MAX_ANIMALS; i++) {
             if (all_ocean[i].type != EMPTY) {
@@ -214,9 +212,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             }
         }
 
-        // Debug: Check display array
         printf("Process %d: Printing display array.\n", world_rank);
-        fflush(stdout);
 
         for (int i = 0; i < oceanSize; i++) {
             for (int j = 0; j < oceanSize; j++) {
@@ -225,16 +221,12 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             printf("\n");
         }
 
-        // Debug: After printing
         printf("Process %d: Display printed successfully.\n", world_rank);
-        fflush(stdout);
-
         free(all_ocean);
     }
 
-    // Debug: End of printOcean
     printf("Process %d: Finished printOcean function.\n", world_rank);
-    fflush(stdout);
+    getchar();
 }
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
