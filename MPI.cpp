@@ -57,10 +57,9 @@ void updateForces(Animal* a, Animal* local_ocean, int local_count) {
     float force_y = CURRENT_FORCE_Y;
 
     for (int i = 0; i < local_count; i++) {
+        if (a == &local_ocean[i]) continue;
         float distance = sqrt(pow(local_ocean[i].x - a->x, 2) + pow(local_ocean[i].y - a->y, 2));
-        if (distance < EPSILON) {
-                distance = EPSILON; 
-        }
+        if (distance == 0) continue;
         
         if (a->type == 1 && local_ocean[i].type == 0) {
             if (distance < VISIBILITY_RANGE) {
