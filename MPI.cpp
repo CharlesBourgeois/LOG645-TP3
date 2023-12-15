@@ -221,6 +221,9 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             if (all_ocean[i].type == 0) { // 0 for fish
                 printf("Fish at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
             }
+            if (all_ocean[i].type == 1) { // 1 for sharks
+                printf("Shark at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
+            }
         }
     }
 
