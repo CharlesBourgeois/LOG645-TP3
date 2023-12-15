@@ -103,12 +103,12 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
                 }
                 else {
                     // Shark eats fish
-                    if (local_ocean[i].type == 1) {
+                   if (local_ocean[i].type == 1 && local_ocean[j].type == 0) {
                         local_ocean[j].type = EMPTY; 
                         local_ocean[i].hunger = 0; 
                         printf("Shark at (%.2f, %.2f) ate fish at (%.2f, %.2f)\n", local_ocean[i].x, local_ocean[i].y, local_ocean[j].x, local_ocean[j].y);
                     }
-                    else {
+                    else if (local_ocean[i].type == 0 && local_ocean[j].type == 1) {
                         printf("Fish at (%.2f, %.2f) eaten by shark at (%.2f, %.2f)\n", local_ocean[i].x, local_ocean[i].y, local_ocean[j].x, local_ocean[j].y);
                         local_ocean[i].type = EMPTY; 
                         local_ocean[j].hunger = 0; 
