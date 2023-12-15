@@ -288,6 +288,7 @@ int main(int argc, char** argv) {
     printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
     float timeStep = 1.0;
+    int total_animals;
 
     for (int step = 0; step < 1000; step++) {
         updateLocalForces(local_ocean, local_count);
