@@ -322,6 +322,7 @@ int main(int argc, char** argv) {
         
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Allreduce(&local_animals, &total_animals, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        printf("Total = %.2f \n", total_animals);
 
          if (total_animals == 0) {
             if (world_rank == 0) {
