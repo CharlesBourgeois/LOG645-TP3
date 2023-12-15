@@ -168,25 +168,17 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     Animal* all_ocean = NULL;
 
     if (world_rank == 0) {
-        // Debug: Check memory allocation
-        printf("Process %d: Allocating memory for all_ocean.\n", world_rank);
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
         if (all_ocean == NULL) {
-            fprintf(stderr, "Process %d: Failed to allocate memory for all_ocean.\n", world_rank);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
-
-    // Debug: Before MPI_Gather
-    printf("Process %d: Gathering local ocean data.\n", world_rank);
 
     int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    all_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    0, MPI_COMM_WORLD);
 
-    // Debug: After MPI_Gather
     if (gather_result != MPI_SUCCESS) {
-        fprintf(stderr, "Process %d: MPI_Gather failed with error code %d.\n", world_rank, gather_result);
         if (world_rank == 0) {
             free(all_ocean);
         }
@@ -197,8 +189,6 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         char display[oceanSize][oceanSize];
         memset(display, '.', sizeof(display)); 
 
-        // Debug: Check if gathered data is correct
-        printf("Process %d: Processing gathered data for display.\n", world_rank);
 
         for (int i = 0; i < MAX_ANIMALS; i++) {
             if (all_ocean[i].type != EMPTY) {
@@ -206,13 +196,9 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
                 int y = (int)all_ocean[i].y;
                 if (x >= 0 && x < oceanSize && y >= 0 && y < oceanSize) {
                     display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
-                } else {
-                    fprintf(stderr, "Process %d: Invalid animal coordinates x=%d, y=%d\n", world_rank, x, y);
                 }
             }
         }
-
-        printf("Process %d: Printing display array.\n", world_rank);
 
         for (int i = 0; i < oceanSize; i++) {
             for (int j = 0; j < oceanSize; j++) {
@@ -221,7 +207,6 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             printf("\n");
         }
 
-        printf("Process %d: Display printed successfully.\n", world_rank);
         free(all_ocean);
     }
 
