@@ -18,6 +18,8 @@
 #define ATTRSHARK 1.0       
 #define ATTRSHARK_CLOSEST 2.0 
 #define VISIBILITY_RANGE 20 
+#define CURRENT_FORCE_X 0.1f // Intensité du courant en X
+#define CURRENT_FORCE_Y 0.0f // Intensité du courant en Y
 
 typedef struct {
     float x_center;
@@ -57,8 +59,8 @@ void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, in
 }
 
 void updateForces(Animal* a, Animal* local_ocean, int local_count) {
-    float force_x = 0.0, force_y = 0.0;
-    force_x += 0.1; 
+    float force_x = CURRENT_FORCE_X;
+    float force_y = CURRENT_FORCE_Y;
 
     for (int i = 0; i < local_count; i++) {
         float distance = sqrt(pow(local_ocean[i].x - a->x, 2) + pow(local_ocean[i].y - a->y, 2));
@@ -281,7 +283,7 @@ int main(int argc, char** argv) {
             
     float timeStep = 1.0;
 
-    for (int step = 0; step < 1; step++) {
+    for (int step = 0; step < 1000; step++) {
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep);
