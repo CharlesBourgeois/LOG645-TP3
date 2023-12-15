@@ -140,6 +140,7 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
 
             if (local_ocean[i].type == 1) {
                 local_ocean[i].hunger++;
+                printf("Shark hunger ++");
                 if (local_ocean[i].hunger > HUNGER_LIMIT) {
                     printf("Shark at (%.2f, %.2f) died of hunger\n", local_ocean[i].x, local_ocean[i].y);
                     local_ocean[i].type = EMPTY; 
