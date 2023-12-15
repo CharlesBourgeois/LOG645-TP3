@@ -64,7 +64,10 @@ void updateForces(Animal* a, Animal* local_ocean, int local_count) {
 
     for (int i = 0; i < local_count; i++) {
         float distance = sqrt(pow(local_ocean[i].x - a->x, 2) + pow(local_ocean[i].y - a->y, 2));
-
+        if (distance < EPSILON) {
+                distance = EPSILON; 
+        }
+        
         if (a->type == 1 && local_ocean[i].type == 0) {
             if (distance < VISIBILITY_RANGE) {
                 force_x += ATTRSHARK_CLOSEST / pow(distance, 2);
