@@ -145,18 +145,17 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
     }
 }
 
-void updatePosition(Animal* a, float timeStep) {
+void updatePosition(Animal* a, float timeStep, int oceanSize) {
     a->vx += a->ax * timeStep;
     a->vy += a->ay * timeStep;
 
     a->x += a->vx * timeStep;
     a->y += a->vy * timeStep;
 
-    if (a->x < 0) a->x += OCEAN_SIZE;
-    else if (a->x >= OCEAN_SIZE) a->x -= OCEAN_SIZE;
-
-    if (a->y < 0) a->y += OCEAN_SIZE;
-    else if (a->y >= OCEAN_SIZE) a->y -= OCEAN_SIZE;
+    if (a->x >= oceanSize) a->x -= oceanSize;
+    if (a->x < 0) a->x += oceanSize;
+    if (a->y >= oceanSize) a->y -= oceanSize;
+    if (a->y < 0) a->y += oceanSize;
 }
 
 void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals, int* local_count, int world_size) {
@@ -293,7 +292,7 @@ int main(int argc, char** argv) {
     for (int step = 0; step < 1000; step++) {
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
-            updatePosition(&local_ocean[i], timeStep);
+            updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
         } 
 
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
