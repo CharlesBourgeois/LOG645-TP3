@@ -210,8 +210,8 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         free(all_ocean);
     }
 
-    printf("Process %d: Finished printOcean function.\n", world_rank);
-    getchar();
+    printf("\nPress Enter to continue to the next round...\n");
+    getchar(); 
 }
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
