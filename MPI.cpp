@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
 
     initializeLocalOcean(local_ocean, &local_count, start_x, start_y, subdomain_size, world_rank, world_size);
             
-    printOcean(ocean, OCEAN_SIZE);
+    printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
 
      printf("\nPress Enter to continue to the next round...\n");
      getchar(); 
@@ -292,8 +292,10 @@ int main(int argc, char** argv) {
         int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
         processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size);
         
+        MPI_Barrier(MPI_COMM_WORLD);
+
         if (world_rank == 0) {
-            printOcean(ocean, OCEAN_SIZE);
+            printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         }
         
         MPI_Barrier(MPI_COMM_WORLD);
