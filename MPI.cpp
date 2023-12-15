@@ -216,7 +216,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
 
         free(all_ocean);
 
-        printf("Fish Coordinates:\n");
+       /* printf("Fish Coordinates:\n");
         for (int i = 0; i < MAX_ANIMALS; i++) {
             if (all_ocean[i].type == 0) { // 0 for fish
                 printf("Fish at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
@@ -224,7 +224,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             if (all_ocean[i].type == 1) { // 1 for sharks
                 printf("Shark at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
             }
-        }
+        }*/
     }
 
     printf("\nPress Enter to continue to the next round...\n");
@@ -332,9 +332,16 @@ int main(int argc, char** argv) {
         MPI_Allreduce(&shark_count, &total_sharks, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         MPI_Allreduce(&fish_count, &total_fish, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-        if (total_sharks == 0 || total_fish == 0) {
+        if (total_sharks == 0) {
             if (world_rank == 0) {
-                printf("End of simulation: No more sharks or fish left.\n");
+                printf("End of simulation: Fish win! No more sharks left.\n");
+            }
+            break;
+        }
+    
+        if (total_fish == 0) {
+            if (world_rank == 0) {
+                printf("End of simulation: Sharks win! No more fish left.\n");
             }
             break;
         }
