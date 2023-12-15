@@ -47,6 +47,9 @@ void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, in
         local_ocean[i].ax = local_ocean[i].ay = 0;
         local_ocean[i].hunger = 0;
         (*local_count)++;
+
+                printf("Animal initialized at (%f, %f) by process %d\n", local_ocean[i].x, local_ocean[i].y, world_rank);
+
     }
 }
 
