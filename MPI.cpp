@@ -37,9 +37,18 @@ typedef struct {
 Animal ocean[MAX_ANIMALS];
 
 void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, int start_y, int subdomain_size, int world_rank, int world_size) {
-    srand(time(NULL) + world_rank); 
+    // Seed the random generator with unique seed for each process
+    srand((unsigned int)(time(NULL)) ^ (world_rank + 1)); // XORing with world_rank ensures different seeds
     *local_count = 0;
-    for (int i = 0; i < MAX_ANIMALS / world_size; i++) {
+
+    // Calculate the number of animals to be initialized by this process
+    int animals_per_process = MAX_ANIMALS / world_size;
+    if (world_rank == world_size - 1) {
+        // Handle the last process separately in case MAX_ANIMALS is not divisible by world_size
+        animals_per_process += MAX_ANIMALS % world_size;
+    }
+
+    for (int i = 0; i < animals_per_process; i++) {
         local_ocean[i].type = rand() % 2;
         local_ocean[i].x = start_x + (rand() % subdomain_size);
         local_ocean[i].y = start_y + (rand() % subdomain_size);
@@ -48,9 +57,15 @@ void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, in
         local_ocean[i].hunger = 0;
         (*local_count)++;
 
-                printf("Animal initialized at (%f, %f) by process %d\n", local_ocean[i].x, local_ocean[i].y, world_rank);
-
+        // Print information about animal initialization only for the first few animals to avoid clutter
+        if (i < 5) {
+            printf("Process %d initialized animal at (%.2f, %.2f) with type %d\n",
+                   world_rank, local_ocean[i].x, local_ocean[i].y, local_ocean[i].type);
+        }
     }
+
+    // Optionally print a summary for each process
+    printf("Process %d initialized %d animals.\n", world_rank, *local_count);
 }
 
 void updateForces(Animal* a, Animal* local_ocean, int local_count) {
