@@ -40,7 +40,7 @@ void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, in
     if (world_rank == world_size - 1) {
         animals_per_process += MAX_ANIMALS % world_size;
     }
-    printf("animal per process = %.2d", animals_per_process)
+    printf("animal per process = %.2d", animals_per_process);
 
     for (int i = 0; i < animals_per_process; i++) {
         local_ocean[i].type = rand() % 2;
