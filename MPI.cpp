@@ -33,7 +33,7 @@ typedef struct {
 Animal ocean[MAX_ANIMALS];
 
 void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, int start_y, int subdomain_size, int world_rank, int world_size) {
-    srand((unsigned int)(time(NULL)) ^ (world_rank));
+    srand((unsigned int)(time(NULL)) ^ (world_rank + 1));
     *local_count = 0;
 
     int animals_per_process = MAX_ANIMALS / world_size;
