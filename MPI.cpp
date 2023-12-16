@@ -225,10 +225,9 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
                 printf("Shark at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
             }
         }*/
+        printf("\nPress Enter to continue to the next round...\n");
+        getchar(); 
     }
-
-    printf("\nPress Enter to continue to the next round...\n");
-    getchar(); 
 }
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
