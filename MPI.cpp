@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <cfloat>
 
-#define OCEAN_SIZE 80
+#define OCEAN_SIZE 50
 #define MREQUIN 10
 #define MPOISSON 5
 #define PREP 0.1
