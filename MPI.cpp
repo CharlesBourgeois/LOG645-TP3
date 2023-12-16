@@ -174,7 +174,7 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
     Animal* all_ocean = NULL;
     int* recv_counts = NULL;
-    int* displs = NULL
+    int* displs = NULL;
 
     if (world_rank == 0) {
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
