@@ -173,80 +173,60 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
     Animal* all_ocean = NULL;
-    int total_animals = 0;
 
     if (world_rank == 0) {
-        // Allocate memory to hold all animals from all processes
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
         if (all_ocean == NULL) {
-            fprintf(stderr, "Failed to allocate memory for all_ocean\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
-            return;
         }
-
-        // Copy the local ocean data into the all_ocean buffer for the master process.
-        memcpy(all_ocean, local_ocean, local_count * sizeof(Animal));
-        total_animals = local_count; // Start with the local count.
-
-        // Receive data from all other processes.
-        for (int i = 1; i < world_size; i++) {
-            int recv_count;
-            MPI_Status status;
-
-            // First receive the count of animals from each process.
-            MPI_Recv(&recv_count, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
-
-            // Now receive the actual animal data.
-            MPI_Recv(all_ocean + total_animals, recv_count * sizeof(Animal), MPI_BYTE, i, 0, MPI_COMM_WORLD, &status);
-            total_animals += recv_count;  // Update the total count of animals.
-        }
-    } else {
-        // Send the count of animals to the master process.
-        MPI_Send(&local_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-
-        // Now send the actual animal data.
-        MPI_Send(local_ocean, local_count * sizeof(Animal), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
     }
 
-    // Only the master process executes the code below.
-    if (world_rank == 0) {
-        // Initialize the display with '.' representing empty water
-        char (*display)[oceanSize] = (char (*)[oceanSize])malloc(oceanSize * oceanSize * sizeof(char));
-        if (!display) {
-            fprintf(stderr, "Failed to allocate memory for display\n");
+    int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                                   all_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                                   0, MPI_COMM_WORLD);
+
+    if (gather_result != MPI_SUCCESS) {
+        if (world_rank == 0) {
             free(all_ocean);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return;
         }
-        for (int i = 0; i < oceanSize; i++) {
-            for (int j = 0; j < oceanSize; j++) {
-                display[i][j] = '.';
-            }
-        }
+        MPI_Abort(MPI_COMM_WORLD, gather_result);
+    }
 
-        // Populate the display with the animal positions
-        for (int i = 0; i < total_animals; i++) {
+    if (world_rank == 0) {
+        char display[oceanSize][oceanSize];
+        memset(display, '.', sizeof(display)); 
+
+
+        for (int i = 0; i < MAX_ANIMALS; i++) {
             if (all_ocean[i].type != EMPTY) {
-                int x = (int)all_ocean[i].x % oceanSize;
-                int y = (int)all_ocean[i].y % oceanSize;
-                display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
+                int x = (int)all_ocean[i].x;
+                int y = (int)all_ocean[i].y;
+                if (x >= 0 && x < oceanSize && y >= 0 && y < oceanSize) {
+                    display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
+                }
             }
         }
 
-        // Print the display
         for (int i = 0; i < oceanSize; i++) {
             for (int j = 0; j < oceanSize; j++) {
-                printf("%c ", display[i][j]);
+                printf(" %c", display[i][j]);
             }
             printf("\n");
         }
 
-        // Free the dynamically allocated memory
-        free(display);
         free(all_ocean);
 
+       /* printf("Fish Coordinates:\n");
+        for (int i = 0; i < MAX_ANIMALS; i++) {
+            if (all_ocean[i].type == 0) { // 0 for fish
+                printf("Fish at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
+            }
+            if (all_ocean[i].type == 1) { // 1 for sharks
+                printf("Shark at (%.2f, %.2f)\n", all_ocean[i].x, all_ocean[i].y);
+            }
+        }*/
         printf("\nPress Enter to continue to the next round...\n");
-        getchar();
+        getchar(); 
     }
 }
 
