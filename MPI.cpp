@@ -211,7 +211,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     // Only the master process executes the code below.
     if (world_rank == 0) {
         // Initialize the display with '.' representing empty water
-        char (*display)[oceanSize] = malloc(oceanSize * oceanSize * sizeof(char));
+        char (*display)[oceanSize] = (char (*)[oceanSize])malloc(oceanSize * oceanSize * sizeof(char));
         if (!display) {
             fprintf(stderr, "Failed to allocate memory for display\n");
             free(all_ocean);
