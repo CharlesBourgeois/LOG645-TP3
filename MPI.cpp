@@ -60,6 +60,10 @@ void updateForces(Animal* a, Animal* local_ocean, int local_count) {
         if (a == &local_ocean[i]) continue;
         float distance = sqrt(pow(local_ocean[i].x - a->x, 2) + pow(local_ocean[i].y - a->y, 2));
         if (distance < EPSILON) continue;
+        if (fabs(distance) < EPSILON) {
+        fprintf(stderr, "Error: Division by too small number (distance = %f) at (%f, %f).\n", distance, a->x, a->y);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
         
         if (a->type == 1 && local_ocean[i].type == 0) {
             if (distance < VISIBILITY_RANGE) {
