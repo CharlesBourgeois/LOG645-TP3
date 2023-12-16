@@ -33,13 +33,14 @@ typedef struct {
 Animal ocean[MAX_ANIMALS];
 
 void initializeLocalOcean(Animal* local_ocean, int* local_count, int start_x, int start_y, int subdomain_size, int world_rank, int world_size) {
-    srand((unsigned int)(time(NULL)) ^ (world_rank + 1));
+    srand((unsigned int)(time(NULL)) ^ (world_rank));
     *local_count = 0;
 
     int animals_per_process = MAX_ANIMALS / world_size;
     if (world_rank == world_size - 1) {
         animals_per_process += MAX_ANIMALS % world_size;
     }
+    printf("animal per process = %.2d", animals_per_process)
 
     for (int i = 0; i < animals_per_process; i++) {
         local_ocean[i].type = rand() % 2;
