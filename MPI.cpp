@@ -173,38 +173,48 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
     Animal* all_ocean = NULL;
-    int *recvcounts = NULL;
-    int *displs = NULL;
+    int *recvcounts = (int*)malloc(world_size * sizeof(int)); // Allocate for all processes
+    int *displs = (int*)malloc(world_size * sizeof(int));     // Allocate for all processes
 
-    if (world_rank == 0) {
-        // Allocate memory to store the animals from all processes
-        all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
-        if (all_ocean == NULL) {
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-        
-        // Allocate memory to hold the receive counts and displacements
-        recvcounts = (int*)malloc(world_size * sizeof(int));
-        displs = (int*)malloc(world_size * sizeof(int));
-        if (recvcounts == NULL || displs == NULL) {
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
+    if (recvcounts == NULL || displs == NULL) {
+        MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     // Gather the local counts to process 0
     MPI_Gather(&local_count, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (world_rank == 0) {
+        // Allocate memory to store the animals from all processes
+        all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
+        if (all_ocean == NULL) {
+            free(recvcounts);
+            free(displs);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
         // Calculate displacements for the gathered data
         displs[0] = 0;
         for (int i = 1; i < world_size; i++) {
             displs[i] = displs[i-1] + recvcounts[i-1];
         }
-
-        // Gather the actual animal data from all processes
-        MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
-                    all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
     }
+
+    // Create a buffer to receive the animals on all processes
+    Animal *local_ocean_buffer = (Animal*)malloc(local_count * sizeof(Animal));
+    if (local_ocean_buffer == NULL) {
+        free(all_ocean);
+        free(recvcounts);
+        free(displs);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    memcpy(local_ocean_buffer, local_ocean, local_count * sizeof(Animal));
+
+    // Gather the actual animal data from all processes
+    MPI_Gatherv(local_ocean_buffer, local_count * sizeof(Animal), MPI_BYTE,
+                all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    // Free the local buffer
+    free(local_ocean_buffer);
 
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
@@ -231,13 +241,18 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
 
         // Clean up
         free(all_ocean);
-        free(recvcounts);
-        free(displs);
-        
+    }
+
+    // Clean up recvcounts and displs arrays on all processes
+    free(recvcounts);
+    free(displs);
+    
+    if (world_rank == 0) {
         printf("\nPress Enter to continue to the next round...\n");
         getchar(); 
     }
 }
+
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
     MPI_Status status;
