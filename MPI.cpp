@@ -178,6 +178,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
         if (all_ocean == NULL) {
             MPI_Abort(MPI_COMM_WORLD, 1);
+                    printf("CRASH ICICIIIIIIIIIIIIIIIIIIIIIIIIIIII2");
         }
     }
 
@@ -189,6 +190,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         if (world_rank == 0) {
             free(all_ocean);
         }
+        printf("CRASH ICICIIIIIIIIIIIIIIIIIIIIIIIIIIII");
         MPI_Abort(MPI_COMM_WORLD, gather_result);
     }
 
