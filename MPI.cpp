@@ -173,26 +173,29 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
     Animal* all_ocean = NULL;
+    int* recv_counts = NULL;
+    int* displs = NULL
 
     if (world_rank == 0) {
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
-        if (all_ocean == NULL) {
+        recv_counts = (int*)malloc(world_size * sizeof(int));
+        displs = (int*)malloc(world_size * sizeof(int));
+        // Ensure all memory allocations succeeded
+        if (all_ocean == NULL || recv_counts == NULL || displs == NULL) {
             MPI_Abort(MPI_COMM_WORLD, 1);
-                    printf("CRASH ICICIIIIIIIIIIIIIIIIIIIIIIIIIIII2");
         }
+        // Calculate displacements and receive counts
+        for (int i = 0; i < world_size; i++) {
+            recv_counts[i] = MAX_ANIMALS / world_size * sizeof(Animal);
+            displs[i] = i * (MAX_ANIMALS / world_size * sizeof(Animal));
+        }
+        // Adjust for any remainder in the last process
+        recv_counts[world_size - 1] += (MAX_ANIMALS % world_size) * sizeof(Animal);
     }
 
-    int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
-                                   all_ocean, local_count * sizeof(Animal), MPI_BYTE,
-                                   0, MPI_COMM_WORLD);
-
-    if (gather_result != MPI_SUCCESS) {
-        if (world_rank == 0) {
-            free(all_ocean);
-        }
-        printf("CRASH ICICIIIIIIIIIIIIIIIIIIIIIIIIIIII");
-        MPI_Abort(MPI_COMM_WORLD, gather_result);
-    }
+    MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                all_ocean, recv_counts, displs, MPI_BYTE,
+                0, MPI_COMM_WORLD);
 
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
@@ -217,6 +220,8 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         }
 
         free(all_ocean);
+        free(recv_counts);
+        free(displs);
 
        /* printf("Fish Coordinates:\n");
         for (int i = 0; i < MAX_ANIMALS; i++) {
