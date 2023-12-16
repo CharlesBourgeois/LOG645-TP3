@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <cfloat>
 
-#define OCEAN_SIZE 50
+#define OCEAN_SIZE 48
 #define MREQUIN 10
 #define MPOISSON 5
 #define PREP 0.1
@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
         } 
-        sleep(5);
+        
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
 
         Animal buffer[MAX_ANIMALS]; 
