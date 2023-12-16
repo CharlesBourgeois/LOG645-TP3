@@ -173,24 +173,22 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
     
-    MPI_Barrier(MPI_COMM_WORLD);
-
     Animal* all_ocean = NULL;
     int *recvcounts = NULL;
     int *displs = NULL;
+
+    // Synchronization to ensure all processes reach this point
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // Only rank 0 allocates memory for these
     if (world_rank == 0) {
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
         recvcounts = (int*)malloc(world_size * sizeof(int));
         displs = (int*)malloc(world_size * sizeof(int));
-        if (all_ocean == NULL || recvcounts == NULL || displs == NULL) {
-            fprintf(stderr, "Memory allocation failed\n");
-            if (all_ocean) free(all_ocean);
-            if (recvcounts) free(recvcounts);
-            if (displs) free(displs);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return;
+        
+        if (!all_ocean || !recvcounts || !displs) {
+            fprintf(stderr, "Error in memory allocation\n");
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
     }
 
@@ -198,27 +196,31 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     MPI_Gather(&local_count, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (world_rank == 0) {
-        int total_count = 0;
-        displs[0] = 0;
-        for (int i = 0; i < world_size; i++) {
-            total_count += recvcounts[i];
-            if (i > 0) {
-                displs[i] = displs[i-1] + recvcounts[i-1];
+        // Calculate displacements
+        int total_animals = 0;
+        for (int i = 0; i < world_size; ++i) {
+            displs[i] = total_animals;
+            total_animals += recvcounts[i];
+            
+            // Check for potential overflow
+            if (total_animals > MAX_ANIMALS) {
+                fprintf(stderr, "Too many animals to gather: %d\n", total_animals);
+                MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
             }
         }
 
-        if (total_count > MAX_ANIMALS) {
-            fprintf(stderr, "Total data to receive exceeds allocation\n");
-            free(all_ocean);
-            free(recvcounts);
-            free(displs);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return;
+        // Perform the gather operation
+        int err = MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                              all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
+        // Check for errors
+        if (err != MPI_SUCCESS) {
+            char error_string[BUFSIZ];
+            int length_of_error_string, error_class;
+            MPI_Error_class(err, &error_class);
+            MPI_Error_string(error_class, error_string, &length_of_error_string);
+            fprintf(stderr, "%3d: %s\n", world_rank, error_string);
+            MPI_Abort(MPI_COMM_WORLD, err);
         }
-        
-        // Gather the actual animal data from all processes
-        MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
-                    all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     
     // Printing and display logic for rank 0
