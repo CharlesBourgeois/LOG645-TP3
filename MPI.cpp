@@ -181,6 +181,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         }
     }
 
+    getchar();
     int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    all_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    0, MPI_COMM_WORLD);
