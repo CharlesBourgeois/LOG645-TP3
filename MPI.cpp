@@ -11,7 +11,7 @@
 #define MPOISSON 5
 #define PREP 0.1
 #define EMPTY -1
-#define MAX_ANIMALS 250
+#define MAX_ANIMALS 500
 #define HUNGER_LIMIT 5
 
 #define REPPOISSON 1.0         
@@ -185,7 +185,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    all_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    0, MPI_COMM_WORLD);
-
+    MPI_Barrier(MPI_COMM_WORLD);
     if (gather_result != MPI_SUCCESS) {
         if (world_rank == 0) {
             free(all_ocean);
