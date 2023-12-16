@@ -298,10 +298,10 @@ int main(int argc, char** argv) {
     float timeStep = 1.0;
     int shark_count = 0, fish_count = 0;
 
-    sleep(5);
 
     for (int step = 0; step < 1000; step++) {
         printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
+        sleep(5);
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
