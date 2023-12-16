@@ -132,8 +132,8 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
             for (int k = 0; k < *local_count; k++) {
                 if (local_ocean[k].type == EMPTY) {
                     local_ocean[k].type = local_ocean[i].type;
-                    local_ocean[k].x = fmod(local_ocean[i].x + ((rand() % 3) - 1), oceanSize);
-                    local_ocean[k].y = fmod(local_ocean[i].y + ((rand() % 3) - 1), oceanSize);
+                    local_ocean[k].x = fmod(local_ocean[i].x + ((rand() % 3) - 1), OCEANSIZE);
+                    local_ocean[k].y = fmod(local_ocean[i].y + ((rand() % 3) - 1), OCEANSIZE);
                     local_ocean[k].vx = local_ocean[k].vy = 0;
                     local_ocean[k].ax = local_ocean[k].ay = 0;
                     local_ocean[k].hunger = 0;
