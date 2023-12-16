@@ -88,67 +88,55 @@ void updateLocalForces(Animal* local_ocean, int local_count) {
 }
 
 void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count) {
-    // Collision detection and handling
     for (int i = 0; i < *local_count; i++) {
-        if (local_ocean[i].type == EMPTY) continue; // Skip empty slots
-
         for (int j = i + 1; j < *local_count; j++) {
-            if (local_ocean[j].type == EMPTY) continue; // Skip empty slots
-
-            float dx = local_ocean[i].x - local_ocean[j].x;
-            float dy = local_ocean[i].y - local_ocean[j].y;
-            float distance = sqrt(dx * dx + dy * dy);
-
-            if (distance < 1.0) {
-                // Handle collision
+            float distance = sqrt(pow(local_ocean[i].x - local_ocean[j].x, 2) + 
+                                  pow(local_ocean[i].y - local_ocean[j].y, 2));            
+            if (distance < 1.0) { 
                 if (local_ocean[i].type == local_ocean[j].type) {
-                    // Swap velocities
                     float temp_vx = local_ocean[i].vx;
                     float temp_vy = local_ocean[i].vy;
                     local_ocean[i].vx = local_ocean[j].vx;
                     local_ocean[i].vy = local_ocean[j].vy;
                     local_ocean[j].vx = temp_vx;
                     local_ocean[j].vy = temp_vy;
-                } else {
+                }
+                else {
                     // Shark eats fish
-                    if (local_ocean[i].type == 1 && local_ocean[j].type == 0) {
+                   if (local_ocean[i].type == 1 && local_ocean[j].type == 0) {
                         local_ocean[j].type = EMPTY; 
-                        local_ocean[i].hunger = 0;
-                    } else if (local_ocean[i].type == 0 && local_ocean[j].type == 1) {
-                        local_ocean[i].type = EMPTY; 
-                        local_ocean[j].hunger = 0;
+                        local_ocean[i].hunger = 0; 
                     }
-                    // After a fish is eaten, no further processing is needed
-                    break;
+                    else if (local_ocean[i].type == 0 && local_ocean[j].type == 1) {
+                        local_ocean[i].type = EMPTY; 
+                        local_ocean[j].hunger = 0; 
+                    }
                 }
             }
         }
     }
 
-    // Reproduction
     for (int i = 0; i < *local_count; i++) {
-        if (local_ocean[i].type != EMPTY && (double)rand() / RAND_MAX < PREP) {
-            // Find an empty slot to place the new animal
-            for (int k = 0; k < *local_count; k++) {
-                if (local_ocean[k].type == EMPTY) {
-                    local_ocean[k].type = local_ocean[i].type;
-                    local_ocean[k].x = fmod(local_ocean[i].x + ((rand() % 3) - 1), OCEAN_SIZE);
-                    local_ocean[k].y = fmod(local_ocean[i].y + ((rand() % 3) - 1), OCEAN_SIZE);
-                    local_ocean[k].vx = local_ocean[k].vy = 0;
-                    local_ocean[k].ax = local_ocean[k].ay = 0;
-                    local_ocean[k].hunger = 0;
-                    break;
+        if (local_ocean[i].type != EMPTY) {
+            if ((double)rand() / RAND_MAX < PREP) {
+                for (int k = 0; k < *local_count; k++) {
+                    if (local_ocean[k].type == EMPTY) {
+                        local_ocean[k].type = local_ocean[i].type;
+                        local_ocean[k].x = local_ocean[i].x + ((rand() % 3) - 1);
+                        local_ocean[k].y = local_ocean[i].y + ((rand() % 3) - 1);
+                        local_ocean[k].vx = local_ocean[k].vy = 0;
+                        local_ocean[k].ax = local_ocean[k].ay = 0;
+                        local_ocean[k].hunger = 0;
+                        break;
+                    }
                 }
             }
-        }
-    }
 
-    // Hunger increment and shark death from starvation
-    for (int i = 0; i < *local_count; i++) {
-        if (local_ocean[i].type == 1) {
-            local_ocean[i].hunger++;
-            if (local_ocean[i].hunger > HUNGER_LIMIT) {
-                local_ocean[i].type = EMPTY; 
+            if (local_ocean[i].type == 1) {
+                local_ocean[i].hunger++;
+                if (local_ocean[i].hunger > HUNGER_LIMIT) {
+                    local_ocean[i].type = EMPTY; 
+                }
             }
         }
     }
@@ -194,13 +182,6 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     int gather_result = MPI_Gather(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    all_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    0, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (gather_result != MPI_SUCCESS) {
-        if (world_rank == 0) {
-            free(all_ocean);
-        }
-        MPI_Abort(MPI_COMM_WORLD, gather_result);
-    }
 
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
