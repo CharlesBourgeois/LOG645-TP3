@@ -6,12 +6,12 @@
 #include <unistd.h>
 #include <cfloat>
 
-#define OCEAN_SIZE 48
+#define OCEAN_SIZE 50
 #define MREQUIN 10
 #define MPOISSON 5
 #define PREP 0.1
 #define EMPTY -1
-#define MAX_ANIMALS 500
+#define MAX_ANIMALS 250
 #define HUNGER_LIMIT 5
 
 #define REPPOISSON 1.0         
