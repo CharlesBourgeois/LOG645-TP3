@@ -172,63 +172,46 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 }
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
-    
     Animal* all_ocean = NULL;
-    int *recvcounts = NULL;
-    int *displs = NULL;
 
-    // Synchronization to ensure all processes reach this point
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    // Only rank 0 allocates memory for these
     if (world_rank == 0) {
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
-        recvcounts = (int*)malloc(world_size * sizeof(int));
-        displs = (int*)malloc(world_size * sizeof(int));
-        
-        if (!all_ocean || !recvcounts || !displs) {
-            fprintf(stderr, "Error in memory allocation\n");
-            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+        if (all_ocean == NULL) {
+            fprintf(stderr, "Failed to allocate memory for all_ocean\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return;
         }
+
+        // Copy the local ocean data into the all_ocean buffer for the master process.
+        memcpy(all_ocean, local_ocean, local_count * sizeof(Animal));
+
+        // Receive data from all other processes.
+        for (int i = 1; i < world_size; i++) {
+            int recv_count;
+            MPI_Status status;
+
+            // First receive the count of animals from each process.
+            MPI_Recv(&recv_count, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+
+            // Now receive the actual animal data.
+            MPI_Recv(all_ocean + local_count, recv_count * sizeof(Animal), MPI_BYTE, i, 0, MPI_COMM_WORLD, &status);
+            local_count += recv_count;  // Update the count of animals.
+        }
+    } else {
+        // Send the count of animals to the master process.
+        MPI_Send(&local_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+
+        // Now send the actual animal data.
+        MPI_Send(local_ocean, local_count * sizeof(Animal), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
     }
 
-    // Gather the local counts to process 0
-    MPI_Gather(&local_count, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    if (world_rank == 0) {
-        // Calculate displacements
-        int total_animals = 0;
-        for (int i = 0; i < world_size; ++i) {
-            displs[i] = total_animals;
-            total_animals += recvcounts[i];
-            
-            // Check for potential overflow
-            if (total_animals > MAX_ANIMALS) {
-                fprintf(stderr, "Too many animals to gather: %d\n", total_animals);
-                MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-            }
-        }
-
-        // Perform the gather operation
-        int err = MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
-                              all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
-        // Check for errors
-        if (err != MPI_SUCCESS) {
-            char error_string[BUFSIZ];
-            int length_of_error_string, error_class;
-            MPI_Error_class(err, &error_class);
-            MPI_Error_string(error_class, error_string, &length_of_error_string);
-            fprintf(stderr, "%3d: %s\n", world_rank, error_string);
-            MPI_Abort(MPI_COMM_WORLD, err);
-        }
-    }
-    
-    // Printing and display logic for rank 0
+    // Only the master process executes the code below.
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
-        memset(display, '.', sizeof(display));
+        memset(display, '.', sizeof(display)); 
 
-        for (int i = 0; i < MAX_ANIMALS; i++) {
+        // Fill in the display with animals from all processes.
+        for (int i = 0; i < local_count; i++) {
             if (all_ocean[i].type != EMPTY) {
                 int x = (int)all_ocean[i].x;
                 int y = (int)all_ocean[i].y;
@@ -238,6 +221,7 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             }
         }
 
+        // Print the display.
         for (int i = 0; i < oceanSize; i++) {
             for (int j = 0; j < oceanSize; j++) {
                 printf(" %c", display[i][j]);
@@ -245,15 +229,12 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
             printf("\n");
         }
 
-        free(all_ocean); // Free the all_ocean buffer after use
-        free(recvcounts); // Free memory allocated for recvcounts
-        free(displs); // Free memory allocated for displacements
+        free(all_ocean);
         printf("\nPress Enter to continue to the next round...\n");
-        getchar();
+        getchar(); 
     }
-
-    // No need to free recvcounts and displs on all processes, it's done above in rank 0 scope
 }
+
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
     MPI_Status status;
