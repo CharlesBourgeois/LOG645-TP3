@@ -60,10 +60,6 @@ void updateForces(Animal* a, Animal* local_ocean, int local_count) {
         if (a == &local_ocean[i]) continue;
         float distance = sqrt(pow(local_ocean[i].x - a->x, 2) + pow(local_ocean[i].y - a->y, 2));
         if (distance < EPSILON) continue;
-        if (fabs(distance) < EPSILON) {
-        fprintf(stderr, "Error: Division by too small number (distance = %f) at (%f, %f).\n", distance, a->x, a->y);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
         
         if (a->type == 1 && local_ocean[i].type == 0) {
             if (distance < VISIBILITY_RANGE) {
@@ -298,12 +294,12 @@ int main(int argc, char** argv) {
     int local_count = 0;
 
     initializeLocalOcean(local_ocean, &local_count, start_x, start_y, subdomain_size, world_rank, world_size);
-    printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
     float timeStep = 1.0;
     int shark_count = 0, fish_count = 0;
 
     for (int step = 0; step < 1000; step++) {
+        printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
@@ -316,11 +312,7 @@ int main(int argc, char** argv) {
         
         int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
         processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size); 
-        
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
-        
+                
         MPI_Barrier(MPI_COMM_WORLD);
 
         shark_count = 0;
