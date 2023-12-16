@@ -172,6 +172,9 @@ void processReceivedAnimals(Animal* local_ocean, Animal* buffer, int numAnimals,
 }
 
 void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_rank, int world_size) {
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+
     Animal* all_ocean = NULL;
     int *recvcounts = NULL;
     int *displs = NULL;
@@ -195,17 +198,29 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     MPI_Gather(&local_count, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (world_rank == 0) {
-        // Calculate displacements for the gathered data
+        int total_count = 0;
         displs[0] = 0;
-        for (int i = 1; i < world_size; i++) {
-            displs[i] = displs[i-1] + recvcounts[i-1];
+        for (int i = 0; i < world_size; i++) {
+            total_count += recvcounts[i];
+            if (i > 0) {
+                displs[i] = displs[i-1] + recvcounts[i-1];
+            }
         }
 
+        if (total_count > MAX_ANIMALS) {
+            fprintf(stderr, "Total data to receive exceeds allocation\n");
+            free(all_ocean);
+            free(recvcounts);
+            free(displs);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return;
+        }
+        
         // Gather the actual animal data from all processes
         MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
                     all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
     }
-
+    
     // Printing and display logic for rank 0
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
