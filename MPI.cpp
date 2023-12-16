@@ -106,10 +106,8 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
                    if (local_ocean[i].type == 1 && local_ocean[j].type == 0) {
                         local_ocean[j].type = EMPTY; 
                         local_ocean[i].hunger = 0; 
-                        printf("Shark at (%.2f, %.2f) ate fish at (%.2f, %.2f)\n", local_ocean[i].x, local_ocean[i].y, local_ocean[j].x, local_ocean[j].y);
                     }
                     else if (local_ocean[i].type == 0 && local_ocean[j].type == 1) {
-                        printf("Fish at (%.2f, %.2f) eaten by shark at (%.2f, %.2f)\n", local_ocean[i].x, local_ocean[i].y, local_ocean[j].x, local_ocean[j].y);
                         local_ocean[i].type = EMPTY; 
                         local_ocean[j].hunger = 0; 
                     }
@@ -137,13 +135,13 @@ void handleLocalCollisionsAndReproduction(Animal* local_ocean, int* local_count)
             if (local_ocean[i].type == 1) {
                 local_ocean[i].hunger++;
                 if (local_ocean[i].hunger > HUNGER_LIMIT) {
-                    printf("Shark at (%.2f, %.2f) died of hunger\n", local_ocean[i].x, local_ocean[i].y);
                     local_ocean[i].type = EMPTY; 
                 }
             }
         }
     }
 }
+
 
 void updatePosition(Animal* a, float timeStep, int oceanSize) {
     a->vx += a->ax * timeStep;
@@ -185,13 +183,6 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
                                    all_ocean, local_count * sizeof(Animal), MPI_BYTE,
                                    0, MPI_COMM_WORLD);
 
-    if (gather_result != MPI_SUCCESS) {
-        if (world_rank == 0) {
-            free(all_ocean);
-        }
-        MPI_Abort(MPI_COMM_WORLD, gather_result);
-    }
-
     if (world_rank == 0) {
         char display[oceanSize][oceanSize];
         memset(display, '.', sizeof(display)); 
@@ -215,10 +206,10 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
         }
 
         free(all_ocean);
-    }
 
-    printf("\nPress Enter to continue to the next round...\n");
-    getchar(); 
+        printf("\nPress Enter to continue to the next round...\n");
+        getchar(); 
+    }
 }
 
 int exchangeAnimals(int world_rank, int world_size, Animal* buffer, int count, Animal* local_ocean, int* local_count) {
@@ -285,17 +276,18 @@ int main(int argc, char** argv) {
     int local_count = 0;
 
     initializeLocalOcean(local_ocean, &local_count, start_x, start_y, subdomain_size, world_rank, world_size);
-    printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         
     float timeStep = 1.0;
-    int total_animals;
+    int shark_count = 0, fish_count = 0;
+
 
     for (int step = 0; step < 1000; step++) {
+        printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
         updateLocalForces(local_ocean, local_count);
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
         } 
-
+        
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
 
         Animal buffer[MAX_ANIMALS]; 
@@ -303,19 +295,33 @@ int main(int argc, char** argv) {
         
         int numAnimalsReceived = exchangeAnimals(world_rank, world_size, buffer, count, local_ocean, &local_count);
         processReceivedAnimals(local_ocean, buffer, numAnimalsReceived, &local_count, world_size); 
-        
+                
         MPI_Barrier(MPI_COMM_WORLD);
 
-        printOcean(local_ocean, local_count, OCEAN_SIZE, world_rank, world_size);
-        
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Allreduce(&local_count, &total_animals, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        shark_count = 0;
+        fish_count = 0;
 
-         if (total_animals == 0) {
+        for (int i = 0; i < local_count; i++) {
+            if (local_ocean[i].type == 1) shark_count++;
+            if (local_ocean[i].type == 0) fish_count++;
+        }
+        
+        int total_sharks, total_fish;
+        MPI_Allreduce(&shark_count, &total_sharks, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&fish_count, &total_fish, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+        if (total_sharks == 0) {
             if (world_rank == 0) {
-                printf("End of simulation: No more animals left.\n");
+                printf("End of simulation: Fish win! No more sharks left.\n");
             }
-            break; // Exit the loop and end the simulation
+            break;
+        }
+    
+        if (total_fish == 0) {
+            if (world_rank == 0) {
+                printf("End of simulation: Sharks win! No more fish left.\n");
+            }
+            break;
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
