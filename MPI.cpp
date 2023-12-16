@@ -305,11 +305,8 @@ int main(int argc, char** argv) {
         for (int i = 0; i < local_count; i++) {
             updatePosition(&local_ocean[i], timeStep, OCEAN_SIZE);
         } 
-
+        sleep(5);
         handleLocalCollisionsAndReproduction(local_ocean, &local_count);
-
-                sleep(5);
-
 
         Animal buffer[MAX_ANIMALS]; 
         int count = prepareExchange(local_ocean, buffer, &local_count, start_x, start_y, subdomain_size);
