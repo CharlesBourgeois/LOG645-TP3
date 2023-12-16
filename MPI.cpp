@@ -176,84 +176,76 @@ void printOcean(Animal* local_ocean, int local_count, int oceanSize, int world_r
     int *recvcounts = NULL;
     int *displs = NULL;
 
-    // Only process 0 will deal with all_ocean, recvcounts, and displs
     if (world_rank == 0) {
+        // Allocate memory to store the animals from all processes and to hold the receive counts and displacements
         all_ocean = (Animal*)malloc(MAX_ANIMALS * sizeof(Animal));
         recvcounts = (int*)malloc(world_size * sizeof(int));
         displs = (int*)malloc(world_size * sizeof(int));
         
-        // Check for successful allocations
         if (all_ocean == NULL || recvcounts == NULL || displs == NULL) {
-            fprintf(stderr, "Memory allocation failed\n");
+            // If any allocation failed, free any successful allocations and abort
             if (all_ocean) free(all_ocean);
             if (recvcounts) free(recvcounts);
             if (displs) free(displs);
             MPI_Abort(MPI_COMM_WORLD, 1);
-            return;
+            return; // Abort will terminate, return is redundant but included for clarity
         }
     }
 
     // Collect the number of animals from each process
     MPI_Gather(&local_count, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Calculate displacements on process 0
     if (world_rank == 0) {
+        // Calculate displacements on process 0
         displs[0] = 0;
-        for (int i = 1; i < world_size; ++i) {
+        for (int i = 1; i < world_size; i++) {
             displs[i] = displs[i - 1] + recvcounts[i - 1];
         }
-    }
 
-    // Gather all animals to process 0
-    MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
-                all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
+        // Gather all animals to process 0
+        MPI_Gatherv(local_ocean, local_count * sizeof(Animal), MPI_BYTE,
+                    all_ocean, recvcounts, displs, MPI_BYTE, 0, MPI_COMM_WORLD);
 
-    if (world_rank == 0) {
-        // Initialize the display array
+        // Create the ocean display
         char (*display)[oceanSize] = malloc(sizeof(char[oceanSize][oceanSize]));
         if (display == NULL) {
-            fprintf(stderr, "Memory allocation for display failed\n");
+            fprintf(stderr, "Failed to allocate memory for display\n");
             free(all_ocean);
             free(recvcounts);
             free(displs);
             MPI_Abort(MPI_COMM_WORLD, 1);
             return;
         }
-        for (int i = 0; i < oceanSize; ++i) {
-            for (int j = 0; j < oceanSize; ++j) {
+        
+        // Initialize the display with '.' representing empty water
+        for (int i = 0; i < oceanSize; i++) {
+            for (int j = 0; j < oceanSize; j++) {
                 display[i][j] = '.';
             }
         }
 
-        // Populate the display with animals
-        for (int i = 0; i < MAX_ANIMALS; ++i) {
+        // Populate the display with the animal positions
+        for (int i = 0; i < MAX_ANIMALS; i++) {
             if (all_ocean[i].type != EMPTY) {
-                int x = (int)all_ocean[i].x;
-                int y = (int)all_ocean[i].y;
-                if (x >= 0 && x < oceanSize && y >= 0 && y < oceanSize) {
-                    display[y][x] = (all_ocean[i].type == 0) ? 'P' : 'R';
-                }
+                int x = (int)all_ocean[i].x % oceanSize; // Ensure the position wraps around
+                int y = (int)all_ocean[i].y % oceanSize; // Ensure the position wraps around
+                display[y][x] = (all_ocean[i].type == 0) ? 'F' : 'S'; // Use 'F' for fish, 'S' for shark
             }
         }
 
         // Print the display
-        for (int i = 0; i < oceanSize; ++i) {
-            for (int j = 0; j < oceanSize; ++j) {
+        for (int i = 0; i < oceanSize; i++) {
+            for (int j = 0; j < oceanSize; j++) {
                 printf("%c ", display[i][j]);
             }
             printf("\n");
         }
 
-        // Free the display array
+        // Free the dynamically allocated memory
         free(display);
-
-        // Clean up
         free(all_ocean);
         free(recvcounts);
         free(displs);
-
-        printf("\nPress Enter to continue to the next round...\n");
-        getchar();
     }
 }
 
