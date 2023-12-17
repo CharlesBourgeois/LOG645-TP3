@@ -188,7 +188,7 @@ int main() {
         }
 
         handleCollisionsAndReproduction();
-        printOcean();
+        printOcean(ocean,OCEAN_SIZE);
     }
     auto t1 = Time::now();
     fsec fs = t1 - t0;
