@@ -169,7 +169,6 @@ void printOcean(Animal ocean[], int oceanSize) {
     }
 
      printf("\nPress Enter to continue to the next round...\n");
-     getchar(); 
 }
 
 int main() {
