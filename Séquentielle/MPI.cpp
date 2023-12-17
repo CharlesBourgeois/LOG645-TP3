@@ -258,8 +258,10 @@ int prepareExchange(Animal* local_ocean, Animal* buffer, int* local_count, int s
 
 int main(int argc, char** argv) {
 
-    chrono::steady_clock sc;   // create an object of `steady_clock` class
-    auto start = sc.now(); 
+    typedef std::chrono::high_resolution_clock Time;
+    typedef std::chrono::milliseconds ms;
+    typedef std::chrono::duration<float> fsec;
+    auto t0 = Time::now();
     int world_size, world_rank;
 
     int subdomain_size = OCEAN_SIZE / sqrt(world_size);
@@ -312,7 +314,9 @@ int main(int argc, char** argv) {
             break;
         }
     }
-    auto end = sc.now(); 
-    printf("Time taken for execution: %f seconds\n", chrono::duration<double>(end - start).count());
+    auto t1 = Time::now();
+    fsec fs = t1 - t0;
+    ms d = std::chrono::duration_cast<ms>(fs);
+    printf("Time taken for execution: %f ms\n", d);
     return 0;
 }
