@@ -335,7 +335,7 @@ int main(int argc, char** argv) {
     fsec fs = t1 - t0;
     printf(fs);
     ms d = std::chrono::duration_cast<ms>(fs);
-    printf("Time taken for execution: " + d);
+    printf("Time taken for execution: %f ms\n", d);
     MPI_Finalize();
     return 0;
 }
