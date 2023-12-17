@@ -5,6 +5,8 @@
 #include <cmath>
 #include <unistd.h>
 #include <cfloat>
+#include <chrono>
+#include <iostream>
 
 #define OCEAN_SIZE 50
 #define MREQUIN 10
@@ -263,7 +265,8 @@ int prepareExchange(Animal* local_ocean, Animal* buffer, int* local_count, int s
 int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
-
+    chrono::steady_clock sc;   // create an object of `steady_clock` class
+    auto start = sc.now(); 
     int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -325,7 +328,8 @@ int main(int argc, char** argv) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
-
+    auto end = sc.now(); 
+    printf("Time taken for execution: %f seconds\n", chrono::duration<double>(end - start).count());
     MPI_Finalize();
     return 0;
 }
